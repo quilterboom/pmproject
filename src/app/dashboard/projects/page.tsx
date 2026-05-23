@@ -1311,21 +1311,19 @@ export default function ProjectsPage() {
                     <span className="ml-4">预期完成: {toLocalDateString(project.end_date) || '-'}</span>
                   </div>
                   {/* 催办按钮 - 卡片视图 */}
-                  <Button
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isAdmin && parseFloat(project.progress) < 100 && project.manager_name) {
+                  {isAdmin && ['planning', 'in_progress', 'overdue'].includes(getProjectStatus(project)) && (
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         handleUrge(project.id);
-                      } else {
-                        alert('只有管理员可以催办未完成且有负责人的任务');
-                      }
-                    }}
-                    disabled={urgingProjectId === project.id}
-                    className="mt-3 w-full bg-red-500 hover:bg-red-600 text-white"
-                  >
-                    {urgingProjectId === project.id ? '催办中...' : '催一下'}
-                  </Button>
+                      }}
+                      disabled={urgingProjectId === project.id}
+                      className="mt-3 w-full bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      {urgingProjectId === project.id ? '催办中...' : '催一下'}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))
@@ -1406,7 +1404,7 @@ export default function ProjectsPage() {
                       编辑
                     </Button>
                     {/* 催办按钮 */}
-                    {parseFloat(project.progress) < 100 && project.manager_name && (
+                    {isAdmin && ['planning', 'in_progress', 'overdue'].includes(getProjectStatus(project)) && (
                       <Button
                         variant="outline"
                         size="sm"
