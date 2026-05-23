@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -59,13 +59,6 @@ export default function ProjectsPage() {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   // 视图模式：list=列表, card=卡片, gantt=甘特图
   const [viewMode, setViewMode] = useState<'list' | 'card' | 'gantt'>('card');
-  // 里程碑相关
-  const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
-  const [selectedProjectForMilestone, setSelectedProjectForMilestone] = useState<any>(null);
-  const [milestones, setMilestones] = useState<any[]>([]);
-  const [milestoneLoading, setMilestoneLoading] = useState(false);
-  const [newMilestone, setNewMilestone] = useState({ name: '', dueDate: '' });
-  const [addingMilestone, setAddingMilestone] = useState(false);
   // 团队成员相关
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [selectedProjectForTeam, setSelectedProjectForTeam] = useState<any>(null);
@@ -95,6 +88,58 @@ export default function ProjectsPage() {
   const aiChatEndRef = useRef<HTMLDivElement>(null);
   // 催办相关
   const [urgingProjectId, setUrgingProjectId] = useState<number | null>(null);
+  
+  // 分页相关状态（后端分页）
+  const [pagination, setPagination] = useState<Record<string, { page: number; pageSize: number }>>({});
+  // 记录每个类型的总数（用于后端分页）
+  const [projectCounts, setProjectCounts] = useState<Record<string, number>>({});
+  // 按类型存储项目数据（后端分页模式）
+  const [projectsByType, setProjectsByType] = useState<Record<string, any[]>>({});
+  // 记录加载状态
+  const [typeLoading, setTypeLoading] = useState<Record<string, boolean>>({});
+
+  // 按类型获取项目数据（后端分页）
+  const fetchProjectsByType = async (typeId: string, page: number = 1, pageSize: number = 10) => {
+    try {
+      setTypeLoading(prev => ({ ...prev, [typeId]: true }));
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('page_size', pageSize.toString());
+      
+      // 添加当前筛选条件
+      const filters = filterRef.current;
+      if (filters.searchKeyword) params.append('keyword', filters.searchKeyword);
+      if (filters.filterStatus && filters.filterStatus !== 'all') params.append('status', filters.filterStatus);
+      if (filters.filterManager && filters.filterManager !== 'all') params.append('manager_name', filters.filterManager);
+      if (filters.filterPriority && filters.filterPriority !== 'all') params.append('priority', filters.filterPriority);
+      if (filters.filterProjectType && filters.filterProjectType !== 'all') params.append('project_type_id', filters.filterProjectType);
+      
+      // 按类型筛选
+      if (typeId !== 'all') {
+        params.append('project_type_id', typeId);
+      }
+      
+      const response = await fetch(`/api/projects?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setProjectsByType(prev => ({
+          ...prev,
+          [typeId]: result.data.list
+        }));
+        setProjectCounts(prev => ({
+          ...prev,
+          [typeId]: result.data.pagination?.total || result.data.list.length
+        }));
+      }
+    } catch (err) {
+      console.error('获取项目列表失败:', err);
+    } finally {
+      setTypeLoading(prev => ({ ...prev, [typeId]: false }));
+    }
+  };
 
   useEffect(() => {
     // 获取用户信息
@@ -213,70 +258,6 @@ export default function ProjectsPage() {
     } catch (err) {
       console.error('加载项目类型失败:', err);
     }
-  };
-
-  // 里程碑相关函数
-  const openMilestoneDialog = async (project: any) => {
-    setSelectedProjectForMilestone(project);
-    setMilestoneDialogOpen(true);
-    setMilestoneLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/milestones?project_id=${project.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setMilestones(result.data || []);
-      }
-    } catch (err) {
-      console.error('获取里程碑失败:', err);
-    } finally {
-      setMilestoneLoading(false);
-    }
-  };
-
-  const handleAddMilestone = async () => {
-    if (!newMilestone.name.trim() || !selectedProjectForMilestone) return;
-    setAddingMilestone(true);
-    try {
-      const token = localStorage.getItem('token');
-      await fetch('/api/milestones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          projectId: selectedProjectForMilestone.id,
-          name: newMilestone.name,
-          dueDate: newMilestone.dueDate || null
-        })
-      });
-      setNewMilestone({ name: '', dueDate: '' });
-      openMilestoneDialog(selectedProjectForMilestone);
-    } catch (err) {
-      alert('添加里程碑失败');
-    } finally {
-      setAddingMilestone(false);
-    }
-  };
-
-  const handleToggleMilestone = async (milestone: any) => {
-    const token = localStorage.getItem('token');
-    await fetch('/api/milestones', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ id: milestone.id, completed: !milestone.completed })
-    });
-    openMilestoneDialog(selectedProjectForMilestone);
-  };
-
-  const handleDeleteMilestone = async (id: number) => {
-    if (!confirm('确定删除此里程碑？')) return;
-    const token = localStorage.getItem('token');
-    await fetch(`/api/milestones?id=${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    openMilestoneDialog(selectedProjectForMilestone);
   };
 
   // 团队成员相关函数
@@ -1248,298 +1229,305 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* 视图渲染 */}
-      {viewMode === 'gantt' ? (
-        /* 甘特图视图 */
-        <div className="space-y-4">
-          <div className="overflow-x-auto">
-            <div className="min-w-[800px] bg-white rounded-lg border">
-              {/* 甘特图头部 */}
-              <div className="flex border-b bg-gray-50 sticky top-0">
-                <div className="w-48 p-3 font-semibold text-sm">任务名称</div>
-                <div className="w-24 p-3 font-semibold text-sm text-center">状态</div>
-                <div className="w-24 p-3 font-semibold text-sm text-center">进度</div>
-                <div className="flex-1 p-3 font-semibold text-sm">时间线 (2026年)</div>
-              </div>
-              {/* 甘特图内容 */}
-              {projects.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">暂无项目</div>
-              ) : (
-                projects.map((project) => {
-                  const startDate = project.start_date ? new Date(project.start_date) : new Date('2026-01-01');
-                  const endDate = project.end_date ? new Date(project.end_date) : new Date('2026-12-31');
-                  const yearStart = new Date('2026-01-01');
-                  const yearEnd = new Date('2026-12-31');
-                  const totalDays = (yearEnd.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24);
-                  const startOffset = Math.max(0, (startDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
-                  const duration = Math.min(totalDays - startOffset, (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-                  const leftPercent = (startOffset / totalDays) * 100;
-                  const widthPercent = (duration / totalDays) * 100;
-                  
-                  return (
-                    <div key={project.id} className="flex border-b hover:bg-gray-50">
-                      <div className="w-48 p-3 text-sm font-medium truncate">{project.name}</div>
-                      <div className="w-32 p-3 text-sm text-center">
-                        <Badge className={statusColors[getProjectStatus(project)] || 'bg-gray-500'}>{statusLabels[getProjectStatus(project)] || '未知'}</Badge>
-                      </div>
-                      <div className="w-24 p-3 text-sm text-center">{project.progress || 0}%</div>
-                      <div className="flex-1 p-2 relative">
-                        <div className="h-6 bg-gray-100 rounded relative">
-                          {startDate && endDate && (
-                            <div 
-                              className={`absolute h-full rounded ${getProjectStatus(project) === 'completed' ? 'bg-green-500' : getProjectStatus(project) === 'in_progress' ? 'bg-blue-500' : 'bg-yellow-500'}`}
-                              style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
-                            />
-                          )}
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                          <span>{project.start_date ? format(new Date(project.start_date), 'MM-dd') : '-'}</span>
-                          <span>{project.end_date ? format(new Date(project.end_date), 'MM-dd') : '-'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+      {/* 按任务类型分组的视图 */}
+      <div className="space-y-6">
+        {/* 按任务类型分组数据 */}
+        {(() => {
+          // 按任务类型分组
+          const groupedProjects: Record<string, any[]> = {};
+          const untypedProjects: any[] = [];
+          
+          // 排序状态优先级
+          const statusPriority: Record<string, number> = {
+            'overdue': 1,
+            'in_progress': 2,
+            'planning': 3,
+            'on_hold': 4,
+            'completed': 5,
+            'cancelled': 6
+          };
+          
+          // 按状态排序函数
+          const sortByStatus = (projects: any[]) => {
+            return [...projects].sort((a, b) => {
+              const statusA = statusPriority[getProjectStatus(a)] || 99;
+              const statusB = statusPriority[getProjectStatus(b)] || 99;
+              return statusA - statusB;
+            });
+          };
+          
+          // 分组
+          projects.forEach(project => {
+            const typeId = project.project_type_id;
+            if (typeId) {
+              const key = typeId.toString();
+              if (!groupedProjects[key]) {
+                groupedProjects[key] = [];
+              }
+              groupedProjects[key].push(project);
+            } else {
+              untypedProjects.push(project);
+            }
+          });
+          
+          // 渲染表头
+          const renderHeader = () => (
+            <div className="grid grid-cols-12 gap-4 py-2 px-4 bg-gray-50 rounded-t-lg border-b font-medium text-xs text-muted-foreground">
+              <div className="col-span-2">任务标题</div>
+              <div className="col-span-1">任务类型</div>
+              <div className="col-span-1">优先级</div>
+              <div className="col-span-1">负责人</div>
+              <div className="col-span-1">预期完成</div>
+              <div className="col-span-2">进度</div>
+              <div className="col-span-1">状态</div>
+              <div className="col-span-3 text-right">操作</div>
             </div>
-          </div>
-        </div>
-      ) : viewMode === 'card' ? (
-        /* 卡片视图 */
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projects.length === 0 ? (
-            <Card className="col-span-full"><CardContent className="py-10 text-center text-muted-foreground">暂无项目</CardContent></Card>
-          ) : (
-            projects.map((project) => (
-              <Card 
-                key={project.id} 
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">{project.name}</h3>
-                      <p className="text-xs text-muted-foreground truncate">{project.description || '无描述'}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge className={statusColors[getProjectStatus(project)] || 'bg-gray-500'}>{statusLabels[getProjectStatus(project)] || '?'}</Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-3">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>进度</span>
-                      <span>{project.progress || 0}%</span>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full ${getProjectStatus(project) === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}
-                        style={{ width: `${project.progress || 0}%` }}
-                      />
-                    </div>
-                  </div>
+          );
 
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    {project.project_type_name && <Badge variant="outline">{project.project_type_name}</Badge>}
-                    <Badge variant="outline" className={priorityColors[project.priority]}>{priorityLabels[project.priority]}优先级</Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-2">
-                    <span>负责人: {project.manager_name || '-'}</span>
-                    <span className="ml-4">预期完成: {toLocalDateString(project.end_date) || '-'}</span>
-                  </div>
-                  {/* 催办按钮 - 卡片视图 */}
-                  {isAdmin && ['planning', 'in_progress', 'overdue'].includes(getProjectStatus(project)) && (
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUrge(project.id);
-                      }}
-                      disabled={urgingProjectId === project.id}
-                      className="mt-3 w-full bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      {urgingProjectId === project.id ? '催办中...' : '催一下'}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-      ) : (
-        /* 列表视图 */
-        <div className="grid gap-4">
-        {projects.map((project) => (
-          <Card key={project.id}>
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1">{project.name}</h3>
-                  <p className="text-sm text-muted-foreground">{project.description}</p>
+          // 渲染项目列表项
+          const renderProjectItem = (project: any, showType: boolean = false) => (
+            <div 
+              key={project.id} 
+              className="grid grid-cols-12 gap-4 py-3 px-4 hover:bg-accent/30 transition-colors border-b border-border/50 items-center"
+            >
+              {/* 任务标题 */}
+              <div className="col-span-2 min-w-0">
+                <span 
+                  className="font-medium text-sm truncate cursor-pointer hover:text-blue-600 block"
+                  onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                >
+                  {project.name}
+                </span>
+              </div>
+              
+              {/* 任务类型 */}
+              <div className="col-span-1">
+                {project.project_type_name ? (
+                  <Badge variant="outline" className="text-xs">{project.project_type_name}</Badge>
+                ) : (
+                  <span className="text-xs text-muted-foreground">-</span>
+                )}
+              </div>
+              
+              {/* 任务优先级 */}
+              <div className="col-span-1">
+                <Badge className={`text-xs ${project.priority === 1 ? 'bg-red-500' : project.priority === 2 ? 'bg-orange-500' : 'bg-gray-500'}`}>
+                  {project.priority === 1 ? '高' : project.priority === 2 ? '中' : '低'}
+                </Badge>
+              </div>
+              
+              {/* 负责人 */}
+              <div className="col-span-1">
+                <span className="text-xs truncate block">{project.manager_name || '-'}</span>
+              </div>
+              
+              {/* 预期完成时间 */}
+              <div className="col-span-1">
+                <span className="text-xs">{toLocalDateString(project.end_date) || '-'}</span>
+              </div>
+              
+              {/* 进度条 */}
+              <div className="col-span-2 flex items-center gap-2">
+                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full ${getProjectStatus(project) === 'completed' ? 'bg-green-500' : getProjectStatus(project) === 'overdue' ? 'bg-red-500' : 'bg-blue-500'}`}
+                    style={{ width: `${project.progress || 0}%` }}
+                  />
                 </div>
-                <div className="flex gap-2 items-center">
-                  {project.project_type_name && (
-                    <Badge
-                      variant="outline"
-                    >
-                      {project.project_type_name}
-                    </Badge>
-                  )}
-                  <Badge className={statusColors[getProjectStatus(project)] || 'bg-gray-500'}>
-                    {statusLabels[getProjectStatus(project)] || '未知'}
-                  </Badge>
-                  <Badge className={priorityColors[project.priority]} variant="secondary">
-                    优先级 {project.priority} - {priorityLabels[project.priority]}
-                  </Badge>
+                <span className="text-xs font-medium text-muted-foreground w-10">{project.progress || 0}%</span>
+              </div>
+              
+              {/* 任务状态 */}
+              <div className="col-span-1">
+                <Badge className={`text-xs ${statusColors[getProjectStatus(project)] || 'bg-gray-500'}`}>
+                  {statusLabels[getProjectStatus(project)] || '未知'}
+                </Badge>
+              </div>
+              
+              {/* 操作按钮 */}
+              <div className="col-span-3 flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                  className="text-xs h-7"
+                >
+                  详情
+                </Button>
+                {isAdmin && ['planning', 'in_progress', 'overdue'].includes(getProjectStatus(project)) && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleUrge(project.id)}
+                    disabled={urgingProjectId === project.id}
+                    className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    {urgingProjectId === project.id ? '催办中...' : '催一下'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+          
+          // 渲染分页组件
+          const renderPagination = (typeProjects: any[], typeId: string, onPageChange: (page: number, pageSize: number) => void, currentPage: number, currentPageSize: number) => {
+            const total = typeProjects.length;
+            const totalPages = Math.ceil(total / currentPageSize);
+            const startIdx = (currentPage - 1) * currentPageSize;
+            const endIdx = Math.min(startIdx + currentPageSize, total);
+            
+            return (
+              <div className="flex items-center justify-between py-3 px-4 border-t bg-gray-50 rounded-b-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    显示 {startIdx + 1}-{endIdx} 共 {total} 条
+                  </span>
+                  <Select 
+                    value={currentPageSize.toString()} 
+                    onValueChange={(value) => onPageChange(1, parseInt(value))}
+                  >
+                    <SelectTrigger className="h-7 w-20 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10/页</SelectItem>
+                      <SelectItem value="20">20/页</SelectItem>
+                      <SelectItem value="30">30/页</SelectItem>
+                      <SelectItem value="40">40/页</SelectItem>
+                      <SelectItem value="50">50/页</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => onPageChange(1, currentPageSize)}
+                    disabled={currentPage <= 1}
+                  >
+                    «
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => onPageChange(currentPage - 1, currentPageSize)}
+                    disabled={currentPage <= 1}
+                  >
+                    ‹
+                  </Button>
+                  <span className="text-xs px-2">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => onPageChange(currentPage + 1, currentPageSize)}
+                    disabled={currentPage >= totalPages}
+                  >
+                    ›
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => onPageChange(totalPages, currentPageSize)}
+                    disabled={currentPage >= totalPages}
+                  >
+                    »
+                  </Button>
                 </div>
               </div>
+            );
+          };
+          
+          // 分页处理
+          const getPaginatedProjects = (typeId: string, projects: any[]) => {
+            const pageConfig = pagination[typeId] || { page: 1, pageSize: 10 };
+            const startIdx = (pageConfig.page - 1) * pageConfig.pageSize;
+            const endIdx = startIdx + pageConfig.pageSize;
+            return sortByStatus(projects).slice(startIdx, endIdx);
+          };
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm mb-4">
-                <div>
-                  <span className="text-muted-foreground">项目类型：</span>
-                  <span className="font-medium">{project.project_type_name || '-'}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">负责人：</span>
-                  <span className="font-medium">{project.manager_name || '-'}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">预期完成日期：</span>
-                  <span className="font-medium">{toLocalDateString(project.end_date) || '-'}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">任务进度：</span>
-                  <span className="font-medium">{project.progress}%</span>
-                </div>
-              </div>
-
-              {/* 进度条显示 */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">任务进度</span>
-                  <span className="font-medium">{project.progress}%</span>
-                </div>
-                <Progress value={project.progress} className="h-2" />
-              </div>
-
-              {/* 当前进展数据框 */}
-              {project.current_progress && (
-                <div className="mb-4 p-4 bg-muted rounded-md border">
-                  <div className="text-sm font-medium mb-2 text-muted-foreground">当前进展</div>
-                  <div className="text-sm whitespace-pre-wrap">{project.current_progress}</div>
-                </div>
+          const handlePageChange = (typeId: string, page: number, pageSize: number) => {
+            setPagination(prev => ({
+              ...prev,
+              [typeId]: { page, pageSize }
+            }));
+            // 触发后端分页请求
+            fetchProjectsByType(typeId, page, pageSize);
+          };
+          
+          return (
+            <>
+              {/* 有任务类型的分组 */}
+              {projectTypes.map(type => {
+                const typeProjects = groupedProjects[type.id.toString()] || [];
+                if (typeProjects.length === 0) return null;
+                const pageConfig = pagination[type.id.toString()] || { page: 1, pageSize: 10 };
+                
+                return (
+                  <Card key={type.id} className="overflow-hidden">
+                    <CardHeader className="pb-3 bg-white">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: type.color }}
+                        />
+                        <CardTitle className="text-lg">{type.name}</CardTitle>
+                        <Badge variant="secondary">{typeProjects.length} 个任务</Badge>
+                      </div>
+                    </CardHeader>
+                    {/* 表头 */}
+                    {renderHeader()}
+                    {/* 数据列表 */}
+                    <div className="space-y-1 bg-white">
+                      {getPaginatedProjects(type.id.toString(), typeProjects).map(project => renderProjectItem(project, false))}
+                      {getPaginatedProjects(type.id.toString(), typeProjects).length === 0 && (
+                        <div className="py-8 text-center text-muted-foreground text-sm">该类型暂无任务</div>
+                      )}
+                    </div>
+                    {/* 分页 */}
+                    {typeProjects.length > 0 && renderPagination(typeProjects, type.id.toString(), (page, pageSize) => handlePageChange(type.id.toString(), page, pageSize), pageConfig.page, pageConfig.pageSize)}
+                  </Card>
+                );
+              })}
+              
+              {/* 未分类的任务 */}
+              {untypedProjects.length > 0 && (
+                <Card key="untyped" className="overflow-hidden">
+                  <CardHeader className="pb-3 bg-white">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-gray-400" />
+                      <CardTitle className="text-lg">未分类</CardTitle>
+                      <Badge variant="secondary">{untypedProjects.length} 个任务</Badge>
+                    </div>
+                  </CardHeader>
+                  {/* 表头 */}
+                  {renderHeader()}
+                  {/* 数据列表 */}
+                  <div className="space-y-1 bg-white">
+                    {getPaginatedProjects('untyped', untypedProjects).map(project => renderProjectItem(project, true))}
+                  </div>
+                  {/* 分页 */}
+                  {untypedProjects.length > 0 && renderPagination(untypedProjects, 'untyped', (page, pageSize) => handlePageChange('untyped', page, pageSize), (pagination['untyped'] || { page: 1, pageSize: 10 }).page, (pagination['untyped'] || { page: 1, pageSize: 10 }).pageSize)}
+                </Card>
               )}
-
-              <div className="flex gap-2 justify-end">
-                {isAdmin && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditDialog(project)}
-                    >
-                      编辑
-                    </Button>
-                    {/* 催办按钮 */}
-                    {isAdmin && ['planning', 'in_progress', 'overdue'].includes(getProjectStatus(project)) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUrge(project.id);
-                        }}
-                        disabled={urgingProjectId === project.id}
-                        className="text-blue-600 hover:bg-blue-50"
-                      >
-                        {urgingProjectId === project.id ? '催办中...' : '催一下'}
-                      </Button>
-                    )}
-                  </>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchProjectLogs(project.id)}
-                  disabled={logsLoading}
-                >
-                  {logsLoading ? '加载中...' : '操作记录'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openMilestoneDialog(project)}
-                >
-                  里程碑
-                </Button>
-                {isAdmin && parseFloat(project.progress) < 100 && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openPauseDialog(project)}
-                      className="text-orange-600 hover:bg-orange-50"
-                      disabled={pausing}
-                    >
-                      暂停
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openTerminateDialog(project)}
-                      className="text-red-600 hover:bg-red-50"
-                      disabled={terminating}
-                    >
-                      终止
-                    </Button>
-                  </>
-                )}
-                {isAdmin && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive hover:bg-destructive/10"
-                      disabled={deleting}
-                    >
-                      {deleting ? '删除中...' : '删除'}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>确认删除任务</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        您确定要删除任务"{project.name}"吗？此操作不可撤销，所有相关数据将被永久删除。
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>取消</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDeleteProject(project.id)}
-                        disabled={deleting}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        {deleting ? (
-                          <>
-                            <span className="animate-spin mr-2">⟳</span>
-                            删除中...
-                          </>
-                        ) : (
-                          '确认删除'
-                        )}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              
+              {/* 没有任何项目时显示提示 */}
+              {projects.length === 0 && (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    暂无任务
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          );
+        })()}
       </div>
-      )}
 
       {/* 操作记录对话框 */}
       <Dialog open={logsDialogOpen} onOpenChange={setLogsDialogOpen}>
@@ -1576,75 +1564,6 @@ export default function ProjectsPage() {
                   <p className="text-sm text-muted-foreground">{log.details}</p>
                 </div>
               ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 里程碑对话框 */}
-      <Dialog open={milestoneDialogOpen} onOpenChange={setMilestoneDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>里程碑管理</DialogTitle>
-            <DialogDescription>
-              项目：{selectedProjectForMilestone?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* 添加里程碑 */}
-            {isAdmin && (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="里程碑名称"
-                  value={newMilestone.name}
-                  onChange={(e) => setNewMilestone({ ...newMilestone, name: e.target.value })}
-                  className="flex-1"
-                />
-                <Input
-                  type="date"
-                  value={newMilestone.dueDate}
-                  onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
-                  className="w-36"
-                />
-                <Button onClick={handleAddMilestone} disabled={addingMilestone || !newMilestone.name.trim()}>
-                  添加
-                </Button>
-              </div>
-            )}
-            {/* 里程碑列表 */}
-            {milestoneLoading ? (
-              <div className="text-center py-4">加载中...</div>
-            ) : milestones.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">暂无里程碑</p>
-            ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {milestones.map((milestone) => (
-                  <div key={milestone.id} className={`flex items-center gap-2 p-3 border rounded-md ${milestone.completed ? 'bg-green-50' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={!!milestone.completed}
-                      onChange={() => handleToggleMilestone(milestone)}
-                      className="w-4 h-4"
-                    />
-                    <span className={`flex-1 ${milestone.completed ? 'line-through text-muted-foreground' : ''}`}>
-                      {milestone.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {milestone.due_date ? new Date(milestone.due_date).toLocaleDateString('zh-CN') : ''}
-                    </span>
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteMilestone(milestone.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        ×
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
             )}
           </div>
         </DialogContent>
