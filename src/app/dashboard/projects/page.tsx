@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -110,24 +110,46 @@ export default function ProjectsPage() {
     fetchProjectTypes();
   }, []);
 
-  const fetchProjects = async () => {
+  // 使用 ref 存储最新的筛选值，避免闭包问题
+  const filterRef = useRef({
+    searchKeyword: '',
+    filterStatus: 'all',
+    filterManager: 'all',
+    filterPriority: 'all',
+    filterProjectType: 'all'
+  });
+
+  // 更新 ref 当状态变化时
+  useEffect(() => {
+    filterRef.current = {
+      searchKeyword,
+      filterStatus,
+      filterManager,
+      filterPriority,
+      filterProjectType
+    };
+  }, [searchKeyword, filterStatus, filterManager, filterPriority, filterProjectType]);
+
+  const fetchProjects = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams();
-      if (searchKeyword) {
-        params.append('keyword', searchKeyword);
+      const filters = filterRef.current;
+      
+      if (filters.searchKeyword) {
+        params.append('keyword', filters.searchKeyword);
       }
-      if (filterStatus && filterStatus !== 'all') {
-        params.append('status', filterStatus);
+      if (filters.filterStatus && filters.filterStatus !== 'all') {
+        params.append('status', filters.filterStatus);
       }
-      if (filterManager && filterManager !== 'all') {
-        params.append('manager_name', filterManager);
+      if (filters.filterManager && filters.filterManager !== 'all') {
+        params.append('manager_name', filters.filterManager);
       }
-      if (filterPriority && filterPriority !== 'all') {
-        params.append('priority', filterPriority);
+      if (filters.filterPriority && filters.filterPriority !== 'all') {
+        params.append('priority', filters.filterPriority);
       }
-      if (filterProjectType && filterProjectType !== 'all') {
-        params.append('project_type_id', filterProjectType);
+      if (filters.filterProjectType && filters.filterProjectType !== 'all') {
+        params.append('project_type_id', filters.filterProjectType);
       }
 
       const response = await fetch(`/api/projects?${params.toString()}`, {
@@ -144,7 +166,7 @@ export default function ProjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // 监听搜索和过滤条件变化，自动重新获取项目列表
   useEffect(() => {
@@ -910,12 +932,24 @@ export default function ProjectsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setSearchKeyword('');
-                  setFilterStatus('all');
-                  setFilterManager('all');
-                  setFilterPriority('all');
-                }}
+            onClick={() => {
+              setSearchKeyword('');
+              setFilterStatus('all');
+              setFilterManager('all');
+              setFilterPriority('all');
+              setFilterProjectType('all');
+              // 先更新 ref，再请求数据（避免 useEffect 异步延迟）
+              filterRef.current = {
+                searchKeyword: '',
+                filterStatus: 'all',
+                filterManager: 'all',
+                filterPriority: 'all',
+                filterProjectType: 'all'
+              };
+              // 手动触发重新请求数据
+              setLoading(true);
+              fetchProjects();
+            }}
               >
                 清除过滤
               </Button>
