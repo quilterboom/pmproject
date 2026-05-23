@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -51,7 +52,7 @@ export default function DashboardLayout({
 
   // 获取未读消息数量
   useEffect(() => {
-    if (!user || user.role === 'admin') return;
+    if (!user) return;
     
     const fetchUnreadCount = async () => {
       try {
@@ -192,7 +193,7 @@ export default function DashboardLayout({
         }
       `}</style>
       <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
-        <Sidebar collapsible="icon" defaultCollapsed side="left">
+        <Sidebar collapsible="icon" side="left">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-4 py-2">
               <span className="text-2xl">🚀</span>

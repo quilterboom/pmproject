@@ -126,6 +126,9 @@ export default function ProjectsPage() {
       if (filterPriority && filterPriority !== 'all') {
         params.append('priority', filterPriority);
       }
+      if (filterProjectType && filterProjectType !== 'all') {
+        params.append('project_type_id', filterProjectType);
+      }
 
       const response = await fetch(`/api/projects?${params.toString()}`, {
         headers: {
@@ -145,15 +148,16 @@ export default function ProjectsPage() {
 
   // 监听搜索和过滤条件变化，自动重新获取项目列表
   useEffect(() => {
+    // 跳过首次渲染（loading 为 true）
+    if (loading === true) return;
+    
     const timer = setTimeout(() => {
-      if (loading === false) { // 只有在初始加载完成后才触发搜索
-        setLoading(true);
-        fetchProjects();
-      }
-    }, 500); // 500ms 防抖
+      setLoading(true);
+      fetchProjects();
+    }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchKeyword, filterStatus, filterManager, filterPriority]);
+  }, [searchKeyword, filterStatus, filterManager, filterPriority, filterProjectType]);
 
   const fetchUsers = async () => {
     try {
@@ -531,7 +535,7 @@ export default function ProjectsPage() {
         progress: formData.progress || 0,
         managerName: managerName,  // 转换 managerIds 为 managerName
         managerPhone: managerPhone,
-        moduleId: formData.projectTypeId === 'none' ? null : formData.projectTypeId,
+        projectTypeId: formData.projectTypeId === 'none' ? null : formData.projectTypeId,
       };
 
       if (editingProject) {
@@ -1303,7 +1307,7 @@ export default function ProjectsPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    {project.module_name && <Badge variant="outline">{project.module_name}</Badge>}
+                    {project.project_type_name && <Badge variant="outline">{project.project_type_name}</Badge>}
                     <Badge variant="outline" className={priorityColors[project.priority]}>{priorityLabels[project.priority]}优先级</Badge>
                   </div>
                   <div className="text-xs text-muted-foreground mt-2">
@@ -1341,11 +1345,11 @@ export default function ProjectsPage() {
                   <p className="text-sm text-muted-foreground">{project.description}</p>
                 </div>
                 <div className="flex gap-2 items-center">
-                  {project.module_name && (
+                  {project.project_type_name && (
                     <Badge
                       variant="outline"
                     >
-                      {project.module_name}
+                      {project.project_type_name}
                     </Badge>
                   )}
                   <Badge className={statusColors[getProjectStatus(project)] || 'bg-gray-500'}>
@@ -1360,7 +1364,7 @@ export default function ProjectsPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm mb-4">
                 <div>
                   <span className="text-muted-foreground">项目类型：</span>
-                  <span className="font-medium">{project.module_name || '-'}</span>
+                  <span className="font-medium">{project.project_type_name || '-'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">负责人：</span>

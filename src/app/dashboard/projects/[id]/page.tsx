@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, 
@@ -58,16 +59,19 @@ export default function ProjectDetailPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<any>(null);
   const [projectTypes, setProjectTypes] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [managerFilter, setManagerFilter] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     goal: '',
     current_progress: '',
     progress: 0,
-    manager_name: '',
+    managerIds: [] as string[],
     end_date: '',
     priority: '2',
     module_id: '',
+    project_type_id: '',
   });
 const [submitting, setSubmitting] = useState(false);
 
@@ -109,9 +113,41 @@ const [submitting, setSubmitting] = useState(false);
       setUser(data.data);
       setIsAdmin(data.data.role === 'admin');
       fetchProject();
+      fetchProjectTypes();
+      fetchUsers();
     } catch (error) {
       console.error('Auth check failed:', error);
       router.push('/');
+    }
+  };
+
+  const fetchProjectTypes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/project-types', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setProjectTypes(result.data);
+      }
+    } catch (err) {
+      console.error('加载项目类型失败:', err);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setUsers(result.data.list || []);
+      }
+    } catch (err) {
+      console.error('加载用户列表失败:', err);
     }
   };
 
@@ -126,16 +162,36 @@ const [submitting, setSubmitting] = useState(false);
       if (data.success) {
         setProject(data.data);
         setEditingProject(data.data);
+        
+        // 将 manager_name 转换为 managerIds
+        let managerIds: string[] = [];
+        if (data.data.manager_name) {
+          const managerNames = data.data.manager_name.split(',').map((n: string) => n.trim());
+          // 等待 users 加载完成后再匹配
+          const token2 = localStorage.getItem('token');
+          fetch('/api/users', {
+            headers: { Authorization: `Bearer ${token2}` }
+          }).then(res => res.json()).then(usersResult => {
+            if (usersResult.success) {
+              const matchedIds = usersResult.data.list
+                .filter((u: any) => managerNames.includes(u.real_name) || managerNames.includes(u.username))
+                .map((u: any) => u.id.toString());
+              setFormData(prev => ({ ...prev, managerIds: matchedIds }));
+            }
+          });
+        }
+        
         setFormData({
           name: data.data.name || '',
           description: data.data.description || '',
           goal: data.data.goal || data.data.description || '',
           current_progress: data.data.current_progress || '',
           progress: parseInt(data.data.progress) || 0,
-          manager_name: data.data.manager_name || '',
+          managerIds: managerIds,
           end_date: data.data.end_date ? data.data.end_date.split('T')[0] : '',
           priority: data.data.priority || '2',
           module_id: data.data.module_id || '',
+          project_type_id: data.data.project_type_id ? data.data.project_type_id.toString() : '',
         });
       }
     } catch (error) {
@@ -143,6 +199,23 @@ const [submitting, setSubmitting] = useState(false);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleManagerToggle = (userId: string) => {
+    setFormData(prev => {
+      const currentManagers = prev.managerIds || [];
+      if (currentManagers.includes(userId)) {
+        return {
+          ...prev,
+          managerIds: currentManagers.filter((id: string) => id !== userId)
+        };
+      } else {
+        return {
+          ...prev,
+          managerIds: [...currentManagers, userId]
+        };
+      }
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -161,16 +234,35 @@ const [submitting, setSubmitting] = useState(false);
     try {
       const token = localStorage.getItem('token');
       
+      // 将 managerIds 转换为 manager_name
+      let managerName = '';
+      let managerPhone = '';
+      if (formData.managerIds && formData.managerIds.length > 0) {
+        const managerNames: string[] = [];
+        const managerPhones: string[] = [];
+        formData.managerIds.forEach((managerId: string) => {
+          const manager = users.find(u => u.id.toString() === managerId.toString());
+          if (manager) {
+            managerNames.push(manager.real_name || manager.username || '');
+            if (manager.phone) managerPhones.push(manager.phone);
+          }
+        });
+        managerName = managerNames.join(', ');
+        managerPhone = managerPhones.join(', ');
+      }
+      
       // 构建更新数据
       const updateData = {
         name: formData.name,
-        description: formData.goal,  // 任务描述的内容放到 description 字段
+        description: formData.goal,
         goal: formData.goal,
         current_progress: formData.current_progress,
         progress: formData.progress,
-        manager_name: formData.manager_name,
-        endDate: formData.end_date,  // 使用驼峰命名
+        managerName: managerName,
+        managerPhone: managerPhone,
+        endDate: formData.end_date,
         priority: formData.priority,
+        projectTypeId: formData.project_type_id ? parseInt(formData.project_type_id) : null,
       };
 
       const res = await fetch(`/api/projects/${projectId}`, {
@@ -375,6 +467,14 @@ const [submitting, setSubmitting] = useState(false);
               <Progress value={parseInt(project.progress) || 0} className="h-3" />
             </div>
 
+            {/* 项目类型 */}
+            <div className="mb-6">
+              <span className="text-muted-foreground text-sm">项目类型</span>
+              <div className="font-medium">
+                {project.project_type_name || '-'}
+              </div>
+            </div>
+
             {/* 预期完成日期 */}
             <div>
                 <span className="text-muted-foreground text-sm">预期完成日期</span>
@@ -557,15 +657,59 @@ const [submitting, setSubmitting] = useState(false);
                 />
               </div>
 
-              {/* 负责人 */}
+              {/* 负责人 - 复选框样式 */}
               <div className="space-y-2">
-                <Label htmlFor="manager_name">负责人</Label>
-                <Input
-                  id="manager_name"
-                  name="manager_name"
-                  value={formData.manager_name}
-                  onChange={handleInputChange}
-                />
+                <Label htmlFor="managers">负责人</Label>
+                <div className="border rounded-md p-4">
+                  {/* 搜索框 */}
+                  <div className="mb-2">
+                    <Input
+                      id="managerSearch"
+                      placeholder="搜索姓名..."
+                      value={managerFilter}
+                      onChange={(e) => setManagerFilter(e.target.value)}
+                      className="h-8"
+                    />
+                  </div>
+                  
+                  {/* 负责人列表 */}
+                  <div className="overflow-x-auto pb-2" style={{ maxHeight: '200px' }}>
+                    <div className="flex flex-wrap gap-2">
+                      {users.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">暂无用户可选</p>
+                      ) : (
+                        users
+                          .filter(u => !managerFilter || (u.real_name || u.username || '').toLowerCase().includes(managerFilter.toLowerCase()))
+                          .map((user) => (
+                            <div 
+                              key={user.id} 
+                              className="flex items-center space-x-1 px-2 py-1 border rounded cursor-pointer hover:bg-accent w-[19%] min-w-[100px]"
+                              onClick={() => handleManagerToggle(user.id.toString())}
+                            >
+                              <input
+                                type="checkbox"
+                                id={`user-${user.id}`}
+                                checked={(formData.managerIds || []).includes(user.id.toString())}
+                                onChange={() => handleManagerToggle(user.id.toString())}
+                                className="h-3 w-3"
+                              />
+                              <label
+                                htmlFor={`user-${user.id}`}
+                                className="text-xs cursor-pointer whitespace-nowrap truncate"
+                              >
+                                {user.real_name || user.username}
+                              </label>
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {(formData.managerIds || []).length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    已选择 {(formData.managerIds || []).length} 位负责人
+                  </p>
+                )}
               </div>
 
               {/* 预期完成日期 */}
@@ -622,6 +766,33 @@ const [submitting, setSubmitting] = useState(false);
                   <option value="2">中优先级</option>
                   <option value="3">低优先级</option>
                 </select>
+              </div>
+
+              {/* 项目类型 */}
+              <div className="space-y-2">
+                <Label htmlFor="project_type">项目类型</Label>
+                <Select
+                  value={formData.project_type_id || 'none'}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, project_type_id: value === 'none' ? '' : value }))}
+                >
+                  <SelectTrigger id="project_type">
+                    <SelectValue placeholder="请选择项目类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">无</SelectItem>
+                    {projectTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: type.color }}
+                          />
+                          {type.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* 进度 */}

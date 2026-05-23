@@ -100,13 +100,16 @@ export async function POST(request: Request) {
       title = `【催办提醒】${project.name}`;
       content = `${currentUser.real_name || currentUser.username} 在 ${currentTimeStr} 催办了项目「${project.name}」，请尽快处理！`;
       
-      // 查找项目负责人
+      // 查找项目负责人（支持多个负责人，用逗号分隔）
       if (project.manager_name) {
-        const managerUsers = await query<any>(
-          'SELECT "id" FROM "SYSDBA"."users" WHERE "real_name" = ? OR "username" = ?',
-          [project.manager_name, project.manager_name]
-        );
-        managerUsers.forEach(u => notifyUserIds.push(u.id));
+        const managerNames = project.manager_name.split(',').map((n: string) => n.trim()).filter((n: string) => n);
+        for (const managerName of managerNames) {
+          const managerUsers = await query<any>(
+            'SELECT "id" FROM "SYSDBA"."users" WHERE "real_name" = ? OR "username" = ?',
+            [managerName, managerName]
+          );
+          managerUsers.forEach(u => notifyUserIds.push(u.id));
+        }
       }
     }
 

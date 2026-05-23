@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     const keyword = searchParams.get('keyword');
     const priority = searchParams.get('priority');
     const managerName = searchParams.get('manager_name');
+    const projectTypeId = searchParams.get('project_type_id');
 
     // 获取当前用户
     const authHeader = request.headers.get('authorization');
@@ -56,6 +57,12 @@ export async function GET(request: Request) {
       params.push(`%${keyword}%`, `%${keyword}%`);
     }
 
+    // 按任务类型筛选
+    if (projectTypeId) {
+      whereClause += ' AND p.project_type_id = ?';
+      params.push(projectTypeId);
+    }
+
     // 非管理员只能查看自己负责的项目（模糊匹配，支持多个负责人）
     if (currentUser.role !== 'admin') {
       whereClause += ' AND p.manager_name LIKE ?';
@@ -74,17 +81,19 @@ export async function GET(request: Request) {
     const projects = await query<any>(`
       SELECT
         p."id", p."name", p."description", p."department_id", p."office_id", p."module_id",
-        p."progress", p."status", p."priority", p."budget", 
+        p."project_type_id", p."progress", p."status", p."priority", p."budget", 
         TO_CHAR(p."start_date", 'YYYY-MM-DD') as "start_date",
         TO_CHAR(p."end_date", 'YYYY-MM-DD') as "end_date",
         p."manager_name", p."manager_phone", p."created_at", p."updated_at", p."goal", p."current_progress",
         d.name as department_name,
         o.name as office_name,
-        m.name as module_name
+        m.name as module_name,
+        pt.name as project_type_name
       FROM "SYSDBA"."projects" p
       LEFT JOIN "SYSDBA"."departments" d ON p.department_id = d.id
       LEFT JOIN "SYSDBA"."offices" o ON p.office_id = o.id
       LEFT JOIN "SYSDBA"."modules" m ON p.module_id = m.id
+      LEFT JOIN "SYSDBA"."project_types" pt ON p.project_type_id = pt.id
       ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT ? OFFSET ?
@@ -147,6 +156,7 @@ export async function POST(request: Request) {
       departmentId,
       officeId,
       moduleId,
+      projectTypeId,
       priority,
       budget,
       startDate,
@@ -185,27 +195,33 @@ export async function POST(request: Request) {
       if (!moduleExists) { modId = null; console.log('module_id不存在，已转为null'); }
     }
 
+    // 处理任务类型
+    let projTypeId = projectTypeId && projectTypeId > 0 ? projectTypeId : null;
+    if (projTypeId) {
+      const projTypeExists = await queryOne('SELECT id FROM "SYSDBA"."project_types" WHERE id = ?', [projTypeId]);
+      if (!projTypeExists) { projTypeId = null; console.log('project_type_id不存在，已转为null'); }
+    }
+
     // 插入项目
-    // 达梦数据库使用 UTC 时区，存储时需要将中国时区的日期转换为 UTC（日期字符串 + 'T00:00:00+08:00' 会被转换为正确日期）
     const formatDateForDB = (dateStr: string | null | undefined) => {
       if (!dateStr) return null;
-      // 直接返回日期字符串，数据库会正确处理
       return dateStr;
     };
     
-    console.log('插入项目参数:', { name, description, moduleId, priority, managerName });
+    console.log('插入项目参数:', { name, description, moduleId, projectTypeId, priority, managerName });
     const result = await execute(`
       INSERT INTO "SYSDBA"."projects" (
-        name, description, department_id, office_id, module_id,
+        name, description, department_id, office_id, module_id, project_type_id,
         priority, budget, start_date, end_date, 
         manager_name, manager_phone, status, progress
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       name,
       description || null,
       deptId,
       offId,
       modId,
+      projTypeId,
       priority || 'medium',
       budget || null,
       formatDateForDB(startDate),

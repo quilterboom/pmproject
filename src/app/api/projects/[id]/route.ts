@@ -12,17 +12,19 @@ export async function GET(
     const project = await queryOne<any>(`
       SELECT
         p."id", p."name", p."description", p."department_id", p."office_id", p."module_id",
-        p."progress", p."status", p."priority", p."budget", 
+        p."project_type_id", p."progress", p."status", p."priority", p."budget", 
         TO_CHAR(p."start_date", 'YYYY-MM-DD') as "start_date",
         TO_CHAR(p."end_date", 'YYYY-MM-DD') as "end_date",
         p."manager_name", p."manager_phone", p."created_at", p."updated_at", p."goal", p."current_progress",
         d.name as department_name,
         o.name as office_name,
-        m.name as module_name
+        m.name as module_name,
+        pt.name as project_type_name
       FROM "SYSDBA"."projects" p
       LEFT JOIN "SYSDBA"."departments" d ON p.department_id = d.id
       LEFT JOIN "SYSDBA"."offices" o ON p.office_id = o.id
       LEFT JOIN "SYSDBA"."modules" m ON p.module_id = m.id
+      LEFT JOIN "SYSDBA"."project_types" pt ON p.project_type_id = pt.id
       WHERE p.id = ?
     `, [id]);
 
@@ -96,6 +98,7 @@ export async function PUT(
       departmentId,
       officeId,
       moduleId,
+      projectTypeId,
       priority,
       budget,
       startDate,
@@ -143,6 +146,13 @@ export async function PUT(
     const startDateValue = startDate ? startDate : (existingProject.start_date || null);
     const endDateValue = endDate ? endDate : (existingProject.end_date || null);
     
+    // 处理任务类型
+    let projTypeId = projectTypeId !== undefined ? projectTypeId : existingProject.project_type_id;
+    if (projTypeId) {
+      const projTypeExists = await queryOne('SELECT id FROM "SYSDBA"."project_types" WHERE id = ?', [projTypeId]);
+      if (!projTypeExists) { projTypeId = null; console.log('project_type_id不存在，已转为null'); }
+    }
+
     const result = await execute(`
       UPDATE "SYSDBA"."projects" SET
         name = ?,
@@ -152,6 +162,7 @@ export async function PUT(
         department_id = ?,
         office_id = ?,
         module_id = ?,
+        project_type_id = ?,
         priority = ?,
         budget = ?,
         start_date = TO_DATE(?, 'YYYY-MM-DD'),
@@ -170,6 +181,7 @@ export async function PUT(
       departmentId !== undefined ? departmentId : existingProject.department_id,
       officeId !== undefined ? officeId : existingProject.office_id,
       moduleId !== undefined ? moduleId : existingProject.module_id,
+      projTypeId,
       priority || existingProject.priority,
       budget !== undefined ? budget : existingProject.budget,
       startDateValue,
