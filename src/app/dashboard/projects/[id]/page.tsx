@@ -57,6 +57,7 @@ export default function ProjectDetailPage() {
   // 编辑对话框
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<any>(null);
+  const [projectTypes, setProjectTypes] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -66,6 +67,7 @@ export default function ProjectDetailPage() {
     manager_name: '',
     end_date: '',
     priority: '2',
+    module_id: '',
   });
 const [submitting, setSubmitting] = useState(false);
 
@@ -133,6 +135,7 @@ const [submitting, setSubmitting] = useState(false);
           manager_name: data.data.manager_name || '',
           end_date: data.data.end_date ? data.data.end_date.split('T')[0] : '',
           priority: data.data.priority || '2',
+          module_id: data.data.module_id || '',
         });
       }
     } catch (error) {

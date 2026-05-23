@@ -45,6 +45,7 @@ export default function ProjectsPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterManager, setFilterManager] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
+  const [filterProjectType, setFilterProjectType] = useState('all');
   const [terminateDialogOpen, setTerminateDialogOpen] = useState(false);
   const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
@@ -887,8 +888,21 @@ export default function ProjectsPage() {
               </SelectContent>
             </Select>
 
+            {/* 任务类型过滤器 */}
+            <Select value={filterProjectType} onValueChange={setFilterProjectType}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="全部类型" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部类型</SelectItem>
+                {projectTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id.toString()}>{type.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* 清除所有过滤器 */}
-            {(searchKeyword || filterStatus !== 'all' || filterManager !== 'all' || filterPriority !== 'all') && (
+            {(searchKeyword || filterStatus !== 'all' || filterManager !== 'all' || filterPriority !== 'all' || filterProjectType !== 'all') && (
               <Button
                 variant="outline"
                 size="sm"
@@ -910,8 +924,8 @@ export default function ProjectsPage() {
             </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingProject ? '编辑任务' : '新建任务'}</DialogTitle>
-              <DialogDescription>{editingProject ? '修改项目信息' : '填写项目信息'}</DialogDescription>
+              <DialogTitle>{editingProject ? '编辑任务' : '修改任务'}</DialogTitle>
+              <DialogDescription>{editingProject ? '修改任务信息' : '填写任务信息'}</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* AI 智能创建 */}
@@ -1290,7 +1304,11 @@ export default function ProjectsPage() {
 
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                     {project.module_name && <Badge variant="outline">{project.module_name}</Badge>}
+                    <Badge variant="outline" className={priorityColors[project.priority]}>{priorityLabels[project.priority]}优先级</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">
                     <span>负责人: {project.manager_name || '-'}</span>
+                    <span className="ml-4">预期完成: {toLocalDateString(project.end_date) || '-'}</span>
                   </div>
                   {/* 催办按钮 - 卡片视图 */}
                   <Button

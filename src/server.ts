@@ -7,8 +7,8 @@ const dev = false; // 强制使用生产模式
 // 禁用开发工具
 process.env.NEXT_DISABLE_DEVTOOLS = '1';
 const hostname = process.env.HOSTNAME || 'localhost';
-const port = parseInt(process.env.PORT || '5000', 10);
-// const port = parseInt(process.env.PORT || '5020', 10);
+// const port = parseInt(process.env.PORT || '5000', 10);
+const port = parseInt(process.env.PORT || '5020', 10);
 
 // Create Next.js app
 const app = next({ dev, hostname, port });
