@@ -1245,15 +1245,15 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
           
           // 渲染表头
           const renderHeader = () => (
-            <div className="grid grid-cols-12 gap-4 py-2 px-4 bg-gray-50 rounded-t-lg border-b font-medium text-xs text-muted-foreground">
-              <div className="col-span-2">任务标题</div>
+            <div className="grid grid-cols-12 gap-1 py-2 px-4 bg-gray-50 rounded-t-lg border-b font-medium text-xs text-muted-foreground">
+              <div className="col-span-3">任务标题</div>
               <div className="col-span-1">任务类型</div>
               <div className="col-span-1">优先级</div>
-              <div className="col-span-1">负责人</div>
+              <div className="col-span-2">负责人</div>
               <div className="col-span-1">预期完成</div>
-              <div className="col-span-2">进度</div>
-              <div className="col-span-1">状态</div>
-              <div className="col-span-3 text-right">操作</div>
+              <div className="col-span-1">进度</div>
+              <div className="col-span-1 text-center">状态</div>
+              <div className="col-span-2 text-right">操作</div>
             </div>
           );
 
@@ -1261,10 +1261,10 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
           const renderProjectItem = (project: any, showType: boolean = false) => (
             <div 
               key={project.id} 
-              className="grid grid-cols-12 gap-4 py-3 px-4 hover:bg-accent/30 transition-colors border-b border-border/50 items-center"
+              className="grid grid-cols-12 gap-2 py-3 px-4 hover:bg-accent/30 transition-colors border-b border-border/50 items-center"
             >
               {/* 任务标题 */}
-              <div className="col-span-2 min-w-0">
+              <div className="col-span-3 min-w-0">
                 <span 
                   className="font-medium text-sm truncate cursor-pointer hover:text-blue-600 block"
                   onClick={() => router.push(`/dashboard/projects/${project.id}`)}
@@ -1290,8 +1290,8 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
               </div>
               
               {/* 负责人 */}
-              <div className="col-span-1">
-                <span className="text-xs truncate block">{project.manager_name || '-'}</span>
+              <div className="col-span-2 min-w-0">
+                <span className="text-xs truncate block" title={project.manager_name || '-'}>{project.manager_name || '-'}</span>
               </div>
               
               {/* 预期完成时间 */}
@@ -1300,25 +1300,25 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
               </div>
               
               {/* 进度条 */}
-              <div className="col-span-2 flex items-center gap-2">
+              <div className="col-span-1 flex items-center gap-1">
                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full ${getProjectStatus(project) === 'completed' ? 'bg-green-500' : getProjectStatus(project) === 'overdue' ? 'bg-red-500' : 'bg-blue-500'}`}
                     style={{ width: `${project.progress || 0}%` }}
                   />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground w-10">{project.progress || 0}%</span>
+                <span className="text-xs font-medium text-muted-foreground w-8">{project.progress || 0}%</span>
               </div>
               
               {/* 任务状态 */}
-              <div className="col-span-1">
+              <div className="col-span-1 text-center">
                 <Badge className={`text-xs ${statusColors[getProjectStatus(project)] || 'bg-gray-500'}`}>
                   {statusLabels[getProjectStatus(project)] || '未知'}
                 </Badge>
               </div>
               
               {/* 操作按钮 */}
-              <div className="col-span-3 flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+              <div className="col-span-2 flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
                 <Button 
                   variant="outline" 
                   size="sm" 

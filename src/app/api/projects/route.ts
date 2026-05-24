@@ -244,25 +244,30 @@ export async function POST(request: Request) {
 
     // 如果有负责人，给负责人发送消息通知
     if (managerName && newProject?.id) {
-      // 根据 manager_name 查找对应的用户
-      const managerUser = await queryOne<{ id: number }>(
-        'SELECT "id" FROM "SYSDBA"."users" WHERE "real_name" = ?',
-        [managerName]
-      );
+      // 分割多个负责人（用逗号分隔）
+      const managerNames = managerName.split(',').map((n: string) => n.trim()).filter((n: string) => n);
+      
+      for (const mName of managerNames) {
+        // 根据 manager_name 查找对应的用户
+        const managerUser = await queryOne<{ id: number }>(
+          'SELECT "id" FROM "SYSDBA"."users" WHERE "real_name" = ? OR "username" = ?',
+          [mName, mName]
+        );
 
-      if (managerUser) {
-        // 发送消息通知
-        await execute(`
-          INSERT INTO "SYSDBA"."notifications" (
-            "user_id", "type", "title", "content", "project_id"
-          ) VALUES (?, ?, ?, ?, ?)
-        `, [
-          managerUser.id,
-          'project_assigned',
-          '新任务分配',
-          `您被分配负责项目"${name}"，请及时查看。`,
-          newProject.id
-        ]);
+        if (managerUser) {
+          // 发送消息通知
+          await execute(`
+            INSERT INTO "SYSDBA"."notifications" (
+              "user_id", "type", "title", "content", "project_id"
+            ) VALUES (?, ?, ?, ?, ?)
+          `, [
+            managerUser.id,
+            'project_assigned',
+            '新任务分配',
+            `您被分配负责项目"${name}"，请及时查看。`,
+            newProject.id
+          ]);
+        }
       }
     }
 

@@ -489,6 +489,24 @@ const [submitting, setSubmitting] = useState(false);
                 </div>
               </div>
 
+            {/* 负责人 */}
+            <div>
+                <span className="text-muted-foreground text-sm">负责人</span>
+                <div className="font-medium">
+                  {project.manager_name || '-'}
+                </div>
+              </div>
+
+            {/* 负责人电话 */}
+            {project.manager_phone && (
+              <div>
+                <span className="text-muted-foreground text-sm">负责人电话</span>
+                <div className="font-medium">
+                  {project.manager_phone}
+                </div>
+              </div>
+            )}
+
             {/* 当前进展 */}
             {project.current_progress && (
               <div className="mb-6 p-4 bg-blue-50 rounded-lg border">
