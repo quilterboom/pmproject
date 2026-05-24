@@ -222,7 +222,7 @@ export async function POST(request: Request) {
       offId,
       modId,
       projTypeId,
-      priority || 'medium',
+      priority || 2,
       budget || null,
       formatDateForDB(startDate),
       formatDateForDB(endDate),
