@@ -1311,8 +1311,8 @@ export default function ProjectsPage() {
               
               {/* 任务优先级 */}
               <div className="col-span-1">
-                <Badge className={`text-xs ${project.priority === 1 ? 'bg-red-500' : project.priority === 2 ? 'bg-orange-500' : 'bg-gray-500'}`}>
-                  {project.priority === 1 ? '高' : project.priority === 2 ? '中' : '低'}
+                <Badge className={`text-xs ${Number(project.priority) === 1 ? 'bg-red-500' : Number(project.priority) === 2 ? 'bg-orange-500' : 'bg-gray-500'}`}>
+                  {Number(project.priority) === 1 ? '高' : Number(project.priority) === 2 ? '中' : '低'}
                 </Badge>
               </div>
               
