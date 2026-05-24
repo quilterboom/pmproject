@@ -22,8 +22,10 @@ import { cn } from '@/lib/utils';
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<any[]>([]);
+  // 不再使用 projects state，数据存储在 projectsByType 中
   const [loading, setLoading] = useState(true);
+// 标记初始加载是否完成
+const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -125,20 +127,26 @@ export default function ProjectsPage() {
       });
       const result = await response.json();
       if (result.success) {
+        // 如果是第二页及以后，合并数据；如果是第一页，直接替换
+        const existingData = pagination[typeId]?.page === 1 ? [] : (projectsByType[typeId] || []);
+        const newData = result.data.list;
+        
         setProjectsByType(prev => ({
           ...prev,
-          [typeId]: result.data.list
+          [typeId]: newData
         }));
         setProjectCounts(prev => ({
           ...prev,
           [typeId]: result.data.pagination?.total || result.data.list.length
         }));
+        // 加载完成后重置加载状态
+        setTypeLoading(prev => ({ ...prev, [typeId]: false }));
       }
     } catch (err) {
       console.error('获取项目列表失败:', err);
-    } finally {
       setTypeLoading(prev => ({ ...prev, [typeId]: false }));
     }
+    // 不要在这里设置 setLoading(false)，由初始加载逻辑统一处理
   };
 
   useEffect(() => {
@@ -150,10 +158,25 @@ export default function ProjectsPage() {
       setIsAdmin(parsedUser.role === 'admin');
     }
     
-    fetchProjects();
+    // 不调用 fetchProjects，改为按类型分别请求
     fetchUsers();
     fetchProjectTypes();
   }, []);
+
+  // 当 projectTypes 加载完成后，按类型分别请求数据
+  useEffect(() => {
+    if (projectTypes.length > 0) {
+      // 为每个任务类型发送请求
+      projectTypes.forEach(type => {
+        fetchProjectsByType(type.id.toString(), 1, 10);
+      });
+      // 同时请求未分类的项目
+      fetchProjectsByType('untyped', 1, 10);
+      setInitialLoadComplete(true);
+      // 延迟设置 loading 为 false，等待所有数据加载完成
+      setTimeout(() => setLoading(false), 1000);
+    }
+  }, [projectTypes]);
 
   // 使用 ref 存储最新的筛选值，避免闭包问题
   const filterRef = useRef({
@@ -175,56 +198,24 @@ export default function ProjectsPage() {
     };
   }, [searchKeyword, filterStatus, filterManager, filterPriority, filterProjectType]);
 
+  // 重新加载所有类型的数据
   const fetchProjects = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const params = new URLSearchParams();
-      const filters = filterRef.current;
+      // 清空现有数据，重新按类型加载
+      setProjectsByType({});
       
-      if (filters.searchKeyword) {
-        params.append('keyword', filters.searchKeyword);
-      }
-      if (filters.filterStatus && filters.filterStatus !== 'all') {
-        params.append('status', filters.filterStatus);
-      }
-      if (filters.filterManager && filters.filterManager !== 'all') {
-        params.append('manager_name', filters.filterManager);
-      }
-      if (filters.filterPriority && filters.filterPriority !== 'all') {
-        params.append('priority', filters.filterPriority);
-      }
-      if (filters.filterProjectType && filters.filterProjectType !== 'all') {
-        params.append('project_type_id', filters.filterProjectType);
-      }
-
-      const response = await fetch(`/api/projects?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      // 为每个任务类型发送请求
+      projectTypes.forEach(type => {
+        fetchProjectsByType(type.id.toString(), pagination[type.id.toString()]?.page || 1, pagination[type.id.toString()]?.pageSize || 10);
       });
-      const result = await response.json();
-      if (result.success) {
-        setProjects(result.data.list);
-      }
+      // 请求未分类的项目
+      fetchProjectsByType('untyped', pagination['untyped']?.page || 1, pagination['untyped']?.pageSize || 10);
     } catch (err) {
       console.error('获取项目列表失败:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // 监听搜索和过滤条件变化，自动重新获取项目列表
-  useEffect(() => {
-    // 跳过首次渲染（loading 为 true）
-    if (loading === true) return;
-    
-    const timer = setTimeout(() => {
-      setLoading(true);
-      fetchProjects();
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchKeyword, filterStatus, filterManager, filterPriority, filterProjectType]);
+  }, [projectTypes, pagination]);
 
   const fetchUsers = async () => {
     try {
@@ -1233,10 +1224,6 @@ export default function ProjectsPage() {
       <div className="space-y-6">
         {/* 按任务类型分组数据 */}
         {(() => {
-          // 按任务类型分组
-          const groupedProjects: Record<string, any[]> = {};
-          const untypedProjects: any[] = [];
-          
           // 排序状态优先级
           const statusPriority: Record<string, number> = {
             'overdue': 1,
@@ -1255,20 +1242,6 @@ export default function ProjectsPage() {
               return statusA - statusB;
             });
           };
-          
-          // 分组
-          projects.forEach(project => {
-            const typeId = project.project_type_id;
-            if (typeId) {
-              const key = typeId.toString();
-              if (!groupedProjects[key]) {
-                groupedProjects[key] = [];
-              }
-              groupedProjects[key].push(project);
-            } else {
-              untypedProjects.push(project);
-            }
-          });
           
           // 渲染表头
           const renderHeader = () => (
@@ -1370,9 +1343,8 @@ export default function ProjectsPage() {
           );
           
           // 渲染分页组件
-          const renderPagination = (typeProjects: any[], typeId: string, onPageChange: (page: number, pageSize: number) => void, currentPage: number, currentPageSize: number) => {
-            const total = typeProjects.length;
-            const totalPages = Math.ceil(total / currentPageSize);
+          const renderPagination = (typeId: string, total: number, onPageChange: (page: number, pageSize: number) => void, currentPage: number, currentPageSize: number) => {
+            const totalPages = Math.ceil(total / currentPageSize) || 1;
             const startIdx = (currentPage - 1) * currentPageSize;
             const endIdx = Math.min(startIdx + currentPageSize, total);
             
@@ -1443,12 +1415,10 @@ export default function ProjectsPage() {
             );
           };
           
-          // 分页处理
+          // 分页处理 - 后端分页模式下直接返回所有数据（API已经返回了当前页的数据）
           const getPaginatedProjects = (typeId: string, projects: any[]) => {
-            const pageConfig = pagination[typeId] || { page: 1, pageSize: 10 };
-            const startIdx = (pageConfig.page - 1) * pageConfig.pageSize;
-            const endIdx = startIdx + pageConfig.pageSize;
-            return sortByStatus(projects).slice(startIdx, endIdx);
+            // 后端分页模式：API已经返回了当前页的数据，不再做前端分页切片
+            return sortByStatus(projects);
           };
 
           const handlePageChange = (typeId: string, page: number, pageSize: number) => {
@@ -1464,7 +1434,7 @@ export default function ProjectsPage() {
             <>
               {/* 有任务类型的分组 */}
               {projectTypes.map(type => {
-                const typeProjects = groupedProjects[type.id.toString()] || [];
+                const typeProjects = projectsByType[type.id.toString()] || [];
                 if (typeProjects.length === 0) return null;
                 const pageConfig = pagination[type.id.toString()] || { page: 1, pageSize: 10 };
                 
@@ -1477,7 +1447,7 @@ export default function ProjectsPage() {
                           style={{ backgroundColor: type.color }}
                         />
                         <CardTitle className="text-lg">{type.name}</CardTitle>
-                        <Badge variant="secondary">{typeProjects.length} 个任务</Badge>
+                        <Badge variant="secondary">{projectCounts[type.id.toString()] || 0} 个任务</Badge>
                       </div>
                     </CardHeader>
                     {/* 表头 */}
@@ -1490,34 +1460,34 @@ export default function ProjectsPage() {
                       )}
                     </div>
                     {/* 分页 */}
-                    {typeProjects.length > 0 && renderPagination(typeProjects, type.id.toString(), (page, pageSize) => handlePageChange(type.id.toString(), page, pageSize), pageConfig.page, pageConfig.pageSize)}
+                    {(projectCounts[type.id.toString()] || 0) > 0 && renderPagination(type.id.toString(), projectCounts[type.id.toString()] || 0, (page, pageSize) => handlePageChange(type.id.toString(), page, pageSize), pageConfig.page, pageConfig.pageSize)}
                   </Card>
                 );
               })}
               
               {/* 未分类的任务 */}
-              {untypedProjects.length > 0 && (
+              {(projectsByType['untyped']?.length || 0) > 0 && (
                 <Card key="untyped" className="overflow-hidden">
                   <CardHeader className="pb-3 bg-white">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 rounded-full bg-gray-400" />
                       <CardTitle className="text-lg">未分类</CardTitle>
-                      <Badge variant="secondary">{untypedProjects.length} 个任务</Badge>
+                      <Badge variant="secondary">{projectCounts['untyped'] || 0} 个任务</Badge>
                     </div>
                   </CardHeader>
                   {/* 表头 */}
                   {renderHeader()}
                   {/* 数据列表 */}
                   <div className="space-y-1 bg-white">
-                    {getPaginatedProjects('untyped', untypedProjects).map(project => renderProjectItem(project, true))}
+                    {getPaginatedProjects('untyped', projectsByType['untyped'] || []).map(project => renderProjectItem(project, true))}
                   </div>
                   {/* 分页 */}
-                  {untypedProjects.length > 0 && renderPagination(untypedProjects, 'untyped', (page, pageSize) => handlePageChange('untyped', page, pageSize), (pagination['untyped'] || { page: 1, pageSize: 10 }).page, (pagination['untyped'] || { page: 1, pageSize: 10 }).pageSize)}
+                  {(projectCounts['untyped'] || 0) > 0 && renderPagination('untyped', projectCounts['untyped'] || 0, (page, pageSize) => handlePageChange('untyped', page, pageSize), (pagination['untyped'] || { page: 1, pageSize: 10 }).page, (pagination['untyped'] || { page: 1, pageSize: 10 }).pageSize)}
                 </Card>
               )}
               
               {/* 没有任何项目时显示提示 */}
-              {projects.length === 0 && (
+              {Object.keys(projectsByType).length === 0 && (
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">
                     暂无任务

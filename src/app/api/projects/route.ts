@@ -59,8 +59,13 @@ export async function GET(request: Request) {
 
     // 按任务类型筛选
     if (projectTypeId) {
-      whereClause += ' AND p.project_type_id = ?';
-      params.push(projectTypeId);
+      if (projectTypeId === 'untyped') {
+        // 查询未分类的项目（project_type_id 为 NULL）
+        whereClause += ' AND p.project_type_id IS NULL';
+      } else {
+        whereClause += ' AND p.project_type_id = ?';
+        params.push(projectTypeId);
+      }
     }
 
     // 非管理员只能查看自己负责的项目（模糊匹配，支持多个负责人）
