@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const priority = searchParams.get('priority');
     const managerName = searchParams.get('manager_name');
     const projectTypeId = searchParams.get('project_type_id');
+    const moduleId = searchParams.get('module_id');
 
     // 获取当前用户
     const authHeader = request.headers.get('authorization');
@@ -44,6 +45,11 @@ export async function GET(request: Request) {
     if (priority) {
       whereClause += ' AND p.priority = ?';
       params.push(priority);
+    }
+
+    if (moduleId) {
+      whereClause += ' AND p.module_id = ?';
+      params.push(moduleId);
     }
 
     // 按负责人搜索（模糊匹配）

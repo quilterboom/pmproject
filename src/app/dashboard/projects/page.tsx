@@ -220,8 +220,6 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       projectTypes.forEach(type => {
         fetchProjectsByType(type.id.toString(), 1, 10);
       });
-      // 同时请求未分类的任务
-      fetchProjectsByType('untyped', 1, 10);
       setInitialLoadComplete(true);
       // 延迟设置 loading 为 false，等待所有数据加载完成
       setTimeout(() => setLoading(false), 1000);
@@ -257,7 +255,6 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       projectTypes.forEach(type => {
         fetchProjectsByType(type.id.toString(), 1, pagination[type.id.toString()]?.pageSize || 10);
       });
-      fetchProjectsByType('untyped', 1, pagination['untyped']?.pageSize || 10);
     }
   }, [searchKeyword, filterStatus, filterManager, filterPriority, filterProjectType, filterModule]);
 
@@ -271,8 +268,6 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       projectTypes.forEach(type => {
         fetchProjectsByType(type.id.toString(), pagination[type.id.toString()]?.page || 1, pagination[type.id.toString()]?.pageSize || 10);
       });
-      // 请求未分类的任务
-      fetchProjectsByType('untyped', pagination['untyped']?.page || 1, pagination['untyped']?.pageSize || 10);
     } catch (err) {
       console.error('获取任务列表失败:', err);
     } finally {
@@ -1600,27 +1595,6 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                   </Card>
                 );
               })}
-              
-              {/* 未分类的任务 */}
-              {(projectsByType['untyped']?.length || 0) > 0 && (
-                <Card key="untyped" className="overflow-hidden">
-                  <CardHeader className="pb-3 bg-white">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full bg-gray-400" />
-                      <CardTitle className="text-lg">未分类</CardTitle>
-                      <Badge variant="secondary">{projectCounts['untyped'] || 0} 个任务</Badge>
-                    </div>
-                  </CardHeader>
-                  {/* 表头 */}
-                  {renderHeader()}
-                  {/* 数据列表 */}
-                  <div className="space-y-1 bg-white">
-                    {getPaginatedProjects('untyped', projectsByType['untyped'] || []).map(project => renderProjectItem(project, true))}
-                  </div>
-                  {/* 分页 */}
-                  {(projectCounts['untyped'] || 0) > 0 && renderPagination('untyped', projectCounts['untyped'] || 0, (page, pageSize) => handlePageChange('untyped', page, pageSize), (pagination['untyped'] || { page: 1, pageSize: 10 }).page, (pagination['untyped'] || { page: 1, pageSize: 10 }).pageSize)}
-                </Card>
-              )}
               
               {/* 没有任何任务时显示提示 */}
               {Object.keys(projectsByType).length === 0 && (
