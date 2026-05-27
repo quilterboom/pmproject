@@ -115,6 +115,7 @@ const [submitting, setSubmitting] = useState(false);
       fetchProject();
       fetchProjectTypes();
       fetchUsers();
+      fetchModules();
     } catch (error) {
       console.error('Auth check failed:', error);
       router.push('/');
@@ -148,6 +149,23 @@ const [submitting, setSubmitting] = useState(false);
       }
     } catch (err) {
       console.error('加载用户列表失败:', err);
+    }
+  };
+
+  const [modules, setModules] = useState<any[]>([]);
+
+  const fetchModules = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/modules', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setModules(result.data);
+      }
+    } catch (err) {
+      console.error('加载模块列表失败:', err);
     }
   };
 
@@ -263,6 +281,7 @@ const [submitting, setSubmitting] = useState(false);
         endDate: formData.end_date,
         priority: formData.priority,
         projectTypeId: formData.project_type_id ? parseInt(formData.project_type_id) : null,
+        moduleId: formData.module_id ? parseInt(formData.module_id) : null,
       };
 
       const res = await fetch(`/api/projects/${projectId}`, {
@@ -503,6 +522,16 @@ const [submitting, setSubmitting] = useState(false);
                 <span className="text-muted-foreground text-sm">负责人电话</span>
                 <div className="font-medium">
                   {project.manager_phone}
+                </div>
+              </div>
+            )}
+
+            {/* 模块 */}
+            {project.module_name && (
+              <div>
+                <span className="text-muted-foreground text-sm">所属模块</span>
+                <div className="font-medium">
+                  {project.module_name}
                 </div>
               </div>
             )}
@@ -807,6 +836,27 @@ const [submitting, setSubmitting] = useState(false);
                           />
                           {type.name}
                         </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 模块选择 */}
+              <div className="space-y-2">
+                <Label htmlFor="module_id">所属模块</Label>
+                <Select
+                  value={formData.module_id || 'none'}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, module_id: value === 'none' ? '' : value }))}
+                >
+                  <SelectTrigger id="module_id">
+                    <SelectValue placeholder="请选择所属模块" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">无</SelectItem>
+                    {modules.map((mod) => (
+                      <SelectItem key={mod.id} value={mod.id.toString()}>
+                        {mod.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

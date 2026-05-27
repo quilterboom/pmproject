@@ -48,6 +48,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [filterManager, setFilterManager] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterProjectType, setFilterProjectType] = useState('all');
+  const [filterModule, setFilterModule] = useState('all');
   const [terminateDialogOpen, setTerminateDialogOpen] = useState(false);
   const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
@@ -58,6 +59,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [pausing, setPausing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [projectTypes, setProjectTypes] = useState<any[]>([]);
+  const [modules, setModules] = useState<any[]>([]);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   // 视图模式：list=列表, card=卡片, gantt=甘特图
   const [viewMode, setViewMode] = useState<'list' | 'card' | 'gantt'>('card');
@@ -76,7 +78,8 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     endDate: '',
     progress: 0,
     currentProgress: '',
-    projectTypeId: 'none'
+    projectTypeId: 'none',
+    moduleId: 'none'
   });
   // AI 智能创建相关
   const [aiDescription, setAiDescription] = useState('');
@@ -91,16 +94,61 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   // 催办相关
   const [urgingProjectId, setUrgingProjectId] = useState<number | null>(null);
   
+  // 可拖动列宽相关
+  const [columnWidths, setColumnWidths] = useState({
+    name: 16,
+    type: 8,
+    module: 10,
+    priority: 8,
+    manager: 18,
+    endDate: 10,
+    progress: 12,
+    status: 8,
+    action: 10
+  });
+  const [resizing, setResizing] = useState<string | null>(null);
+  const [resizingStartX, setResizingStartX] = useState(0);
+  const [resizingStartWidth, setResizingStartWidth] = useState(0);
+  
+  // 拖动开始
+  const handleResizeStart = (columnKey: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setResizing(columnKey);
+    setResizingStartX(e.clientX);
+    setResizingStartWidth(columnWidths[columnKey as keyof typeof columnWidths] || 10);
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - resizingStartX;
+      const containerWidth = document.querySelector('.task-list-container')?.clientWidth || window.innerWidth;
+      const deltaPercent = (delta / containerWidth) * 100;
+      const newWidth = Math.max(5, Math.min(50, resizingStartWidth + deltaPercent));
+      
+      setColumnWidths(prev => ({
+        ...prev,
+        [columnKey]: newWidth
+      }));
+    };
+    
+    const handleMouseUp = () => {
+      setResizing(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+  
   // 分页相关状态（后端分页）
   const [pagination, setPagination] = useState<Record<string, { page: number; pageSize: number }>>({});
   // 记录每个类型的总数（用于后端分页）
   const [projectCounts, setProjectCounts] = useState<Record<string, number>>({});
-  // 按类型存储项目数据（后端分页模式）
+  // 按类型存储任务数据（后端分页模式）
   const [projectsByType, setProjectsByType] = useState<Record<string, any[]>>({});
   // 记录加载状态
   const [typeLoading, setTypeLoading] = useState<Record<string, boolean>>({});
 
-  // 按类型获取项目数据（后端分页）
+  // 按类型获取任务数据（后端分页）
   const fetchProjectsByType = async (typeId: string, page: number = 1, pageSize: number = 10) => {
     try {
       setTypeLoading(prev => ({ ...prev, [typeId]: true }));
@@ -116,9 +164,10 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       if (filters.filterManager && filters.filterManager !== 'all') params.append('manager_name', filters.filterManager);
       if (filters.filterPriority && filters.filterPriority !== 'all') params.append('priority', filters.filterPriority);
       if (filters.filterProjectType && filters.filterProjectType !== 'all') params.append('project_type_id', filters.filterProjectType);
+      if (filters.filterModule && filters.filterModule !== 'all') params.append('module_id', filters.filterModule);
       
       // 按类型筛选
-      if (typeId !== 'all') {
+      if (typeId !== 'all' && typeId !== 'untyped') {
         params.append('project_type_id', typeId);
       }
       
@@ -143,7 +192,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
         setTypeLoading(prev => ({ ...prev, [typeId]: false }));
       }
     } catch (err) {
-      console.error('获取项目列表失败:', err);
+      console.error('获取任务列表失败:', err);
       setTypeLoading(prev => ({ ...prev, [typeId]: false }));
     }
     // 不要在这里设置 setLoading(false)，由初始加载逻辑统一处理
@@ -161,6 +210,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     // 不调用 fetchProjects，改为按类型分别请求
     fetchUsers();
     fetchProjectTypes();
+    fetchModules();
   }, []);
 
   // 当 projectTypes 加载完成后，按类型分别请求数据
@@ -170,7 +220,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       projectTypes.forEach(type => {
         fetchProjectsByType(type.id.toString(), 1, 10);
       });
-      // 同时请求未分类的项目
+      // 同时请求未分类的任务
       fetchProjectsByType('untyped', 1, 10);
       setInitialLoadComplete(true);
       // 延迟设置 loading 为 false，等待所有数据加载完成
@@ -184,7 +234,8 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     filterStatus: 'all',
     filterManager: 'all',
     filterPriority: 'all',
-    filterProjectType: 'all'
+    filterProjectType: 'all',
+    filterModule: 'all'
   });
 
   // 更新 ref 当状态变化时
@@ -194,9 +245,21 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       filterStatus,
       filterManager,
       filterPriority,
-      filterProjectType
+      filterProjectType,
+      filterModule
     };
-  }, [searchKeyword, filterStatus, filterManager, filterPriority, filterProjectType]);
+  }, [searchKeyword, filterStatus, filterManager, filterPriority, filterProjectType, filterModule]);
+  
+  // 当筛选条件变化时，重新加载数据
+  useEffect(() => {
+    if (initialLoadComplete && projectTypes.length > 0) {
+      // 为每个任务类型发送请求
+      projectTypes.forEach(type => {
+        fetchProjectsByType(type.id.toString(), 1, pagination[type.id.toString()]?.pageSize || 10);
+      });
+      fetchProjectsByType('untyped', 1, pagination['untyped']?.pageSize || 10);
+    }
+  }, [searchKeyword, filterStatus, filterManager, filterPriority, filterProjectType, filterModule]);
 
   // 重新加载所有类型的数据
   const fetchProjects = useCallback(async () => {
@@ -208,10 +271,10 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       projectTypes.forEach(type => {
         fetchProjectsByType(type.id.toString(), pagination[type.id.toString()]?.page || 1, pagination[type.id.toString()]?.pageSize || 10);
       });
-      // 请求未分类的项目
+      // 请求未分类的任务
       fetchProjectsByType('untyped', pagination['untyped']?.page || 1, pagination['untyped']?.pageSize || 10);
     } catch (err) {
-      console.error('获取项目列表失败:', err);
+      console.error('获取任务列表失败:', err);
     } finally {
       setLoading(false);
     }
@@ -247,7 +310,24 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
         setProjectTypes(result.data);
       }
     } catch (err) {
-      console.error('加载项目类型失败:', err);
+      console.error('加载任务类型失败:', err);
+    }
+  };
+
+  const fetchModules = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/modules', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setModules(result.data);
+      }
+    } catch (err) {
+      console.error('加载模块列表失败:', err);
     }
   };
 
@@ -530,6 +610,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
         managerName: managerName,  // 转换 managerIds 为 managerName
         managerPhone: managerPhone,
         projectTypeId: formData.projectTypeId === 'none' ? null : formData.projectTypeId,
+        moduleId: formData.moduleId === 'none' ? null : parseInt(formData.moduleId),
       };
 
       if (editingProject) {
@@ -585,7 +666,8 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       endDate: '',
       progress: 0,
       currentProgress: '',
-      projectTypeId: 'none'
+      projectTypeId: 'none',
+      moduleId: 'none'
     });
   };
 
@@ -617,7 +699,8 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       endDate: toLocalDateString(project.end_date),
       progress: project.progress || 0,
       currentProgress: project.current_progress || '',
-      projectTypeId: project.project_type_id ? project.project_type_id.toString() : 'none'
+      projectTypeId: project.project_type_id ? project.project_type_id.toString() : 'none',
+      moduleId: project.module_id ? project.module_id.toString() : 'none'
     });
     setDialogOpen(true);
   };
@@ -710,9 +793,9 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     return 'in_progress';
   };
 
-  // 获取项目状态（优先使用 status 字段，否则根据进度计算）
+  // 获取任务状态（优先使用 status 字段，否则根据进度计算）
   const getProjectStatus = (project: any): string => {
-    // 如果项目有特殊状态（暂停、终止），直接使用
+    // 如果任务有特殊状态（暂停、终止），直接使用
     if (project.status === 'on_hold' || project.status === 'cancelled') {
       return project.status;
     }
@@ -749,7 +832,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     progress: '任务进度',
     priority: '优先级',
     status: '状态',
-    current_progress: '项目进展详情'
+    current_progress: '任务进展详情'
   };
 
   // 操作类型映射（中文）
@@ -899,8 +982,21 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
               </SelectContent>
             </Select>
 
+            {/* 模块过滤器 */}
+            <Select value={filterModule} onValueChange={setFilterModule}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="全部模块" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部模块</SelectItem>
+                {modules.map((mod) => (
+                  <SelectItem key={mod.id} value={mod.id.toString()}>{mod.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* 清除所有过滤器 */}
-            {(searchKeyword || filterStatus !== 'all' || filterManager !== 'all' || filterPriority !== 'all' || filterProjectType !== 'all') && (
+            {(searchKeyword || filterStatus !== 'all' || filterManager !== 'all' || filterPriority !== 'all' || filterProjectType !== 'all' || filterModule !== 'all') && (
               <Button
                 variant="outline"
                 size="sm"
@@ -910,13 +1006,15 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
               setFilterManager('all');
               setFilterPriority('all');
               setFilterProjectType('all');
+              setFilterModule('all');
               // 先更新 ref，再请求数据（避免 useEffect 异步延迟）
               filterRef.current = {
                 searchKeyword: '',
                 filterStatus: 'all',
                 filterManager: 'all',
                 filterPriority: 'all',
-                filterProjectType: 'all'
+                filterProjectType: 'all',
+                filterModule: 'all'
               };
               // 手动触发重新请求数据
               setLoading(true);
@@ -1017,15 +1115,15 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                 />
               </div>
 
-              {/* 项目类型 */}
+              {/* 任务类型 */}
               <div className="space-y-2">
-                <Label htmlFor="projectType">项目类型</Label>
+                <Label htmlFor="projectType">任务类型</Label>
                 <Select
                   value={formData.projectTypeId}
                   onValueChange={(value) => handleSelectChange('projectTypeId', value)}
                 >
                   <SelectTrigger id="projectType">
-                    <SelectValue placeholder="请选择项目类型（可选）" />
+                    <SelectValue placeholder="请选择任务类型（可选）" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">无</SelectItem>
@@ -1038,6 +1136,27 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                           />
                           {type.name}
                         </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 模块选择 */}
+              <div className="space-y-2">
+                <Label htmlFor="moduleId">所属模块</Label>
+                <Select
+                  value={formData.moduleId}
+                  onValueChange={(value) => handleSelectChange('moduleId', value)}
+                >
+                  <SelectTrigger id="moduleId">
+                    <SelectValue placeholder="请选择所属模块（可选）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">无</SelectItem>
+                    {modules.map((mod) => (
+                      <SelectItem key={mod.id} value={mod.id.toString()}>
+                        {mod.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1107,9 +1226,9 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                 )}
               </div>
 
-              {/* 项目优先级 */}
+              {/* 任务优先级 */}
               <div className="space-y-2">
-                <Label htmlFor="priority">项目优先级 *</Label>
+                <Label htmlFor="priority">任务优先级 *</Label>
                 <Select
                   value={formData.priority.toString()}
                   onValueChange={(value) => handleSelectChange('priority', value)}
@@ -1181,16 +1300,16 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                 </div>
               </div>
 
-              {/* 项目进展详情 */}
+              {/* 任务进展详情 */}
               <div className="space-y-2">
-                <Label htmlFor="currentProgress">项目进展详情</Label>
+                <Label htmlFor="currentProgress">任务进展详情</Label>
                 <Textarea
                   id="currentProgress"
                   name="currentProgress"
                   value={formData.currentProgress}
                   onChange={handleInputChange}
                   rows={3}
-                  placeholder="描述项目的当前进展情况..."
+                  placeholder="描述任务的当前进展情况..."
                 />
               </div>
 
@@ -1243,28 +1362,36 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
             });
           };
           
-          // 渲染表头
+          // 渲染表头（可拖动列宽）
           const renderHeader = () => (
-            <div className="grid grid-cols-12 gap-1 py-2 px-4 bg-gray-50 rounded-t-lg border-b font-medium text-xs text-muted-foreground">
-              <div className="col-span-3">任务标题</div>
-              <div className="col-span-1">任务类型</div>
-              <div className="col-span-1">优先级</div>
-              <div className="col-span-2">负责人</div>
-              <div className="col-span-1">预期完成</div>
-              <div className="col-span-1">进度</div>
-              <div className="col-span-1 text-center">状态</div>
-              <div className="col-span-2 text-right">操作</div>
+            <div className="flex py-2 px-4 bg-gray-50 rounded-t-lg border-b font-medium text-xs text-muted-foreground select-none">
+              {Object.entries(columnWidths).map(([key, width], index) => (
+                <div key={key} className="relative" style={{ width: `${width}%`, paddingRight: index < Object.keys(columnWidths).length - 1 ? '8px' : '0' }}>
+                  <span className="block truncate">{key === 'name' ? '任务标题' : key === 'type' ? '类型' : key === 'module' ? '模块' : key === 'priority' ? '优先级' : key === 'manager' ? '负责人' : key === 'endDate' ? '预期' : key === 'progress' ? '进度' : key === 'status' ? '状态' : '操作'}</span>
+                  {index < Object.keys(columnWidths).length - 1 && (
+                    <div 
+                      className="absolute right-0 top-0 h-full w-3 cursor-col-resize z-10"
+                      style={{ transform: 'translateX(4px)' }}
+                      onMouseDown={(e) => handleResizeStart(key, e)}
+                    >
+                      <div 
+                        className={`h-full w-0.5 transition-colors rounded ${resizing === key ? 'bg-blue-500' : 'bg-gray-300 hover:bg-blue-500'}`}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           );
 
-          // 渲染项目列表项
+          // 渲染任务列表项（应用动态列宽）
           const renderProjectItem = (project: any, showType: boolean = false) => (
             <div 
               key={project.id} 
-              className="grid grid-cols-12 gap-2 py-3 px-4 hover:bg-accent/30 transition-colors border-b border-border/50 items-center"
+              className={`flex py-3 px-4 hover:bg-accent/30 transition-colors border-b border-border/50 items-center ${resizing ? 'select-none' : ''}`}
             >
               {/* 任务标题 */}
-              <div className="col-span-3 min-w-0">
+              <div className="min-w-0" style={{ width: `${columnWidths.name}%` }}>
                 <span 
                   className="font-medium text-sm truncate cursor-pointer hover:text-blue-600 block"
                   onClick={() => router.push(`/dashboard/projects/${project.id}`)}
@@ -1274,7 +1401,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
               </div>
               
               {/* 任务类型 */}
-              <div className="col-span-1">
+              <div style={{ width: `${columnWidths.type}%` }}>
                 {project.project_type_name ? (
                   <Badge variant="outline" className="text-xs">{project.project_type_name}</Badge>
                 ) : (
@@ -1282,25 +1409,34 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                 )}
               </div>
               
+              {/* 模块 */}
+              <div style={{ width: `${columnWidths.module}%` }}>
+                {project.module_name ? (
+                  <span className="text-xs truncate block" title={project.module_name}>{project.module_name}</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">-</span>
+                )}
+              </div>
+              
               {/* 任务优先级 */}
-              <div className="col-span-1">
+              <div style={{ width: `${columnWidths.priority}%` }}>
                 <Badge className={`text-xs ${Number(project.priority) === 1 ? 'bg-red-500' : Number(project.priority) === 2 ? 'bg-orange-500' : 'bg-gray-500'}`}>
                   {Number(project.priority) === 1 ? '高' : Number(project.priority) === 2 ? '中' : '低'}
                 </Badge>
               </div>
               
               {/* 负责人 */}
-              <div className="col-span-2 min-w-0">
+              <div className="min-w-0" style={{ width: `${columnWidths.manager}%` }}>
                 <span className="text-xs truncate block" title={project.manager_name || '-'}>{project.manager_name || '-'}</span>
               </div>
               
               {/* 预期完成时间 */}
-              <div className="col-span-1">
+              <div style={{ width: `${columnWidths.endDate}%` }}>
                 <span className="text-xs">{toLocalDateString(project.end_date) || '-'}</span>
               </div>
               
               {/* 进度条 */}
-              <div className="col-span-1 flex items-center gap-1">
+              <div className="flex items-center gap-1" style={{ width: `${columnWidths.progress}%` }}>
                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full ${getProjectStatus(project) === 'completed' ? 'bg-green-500' : getProjectStatus(project) === 'overdue' ? 'bg-red-500' : 'bg-blue-500'}`}
@@ -1311,19 +1447,19 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
               </div>
               
               {/* 任务状态 */}
-              <div className="col-span-1 text-center">
+              <div style={{ width: `${columnWidths.status}%` }}>
                 <Badge className={`text-xs ${statusColors[getProjectStatus(project)] || 'bg-gray-500'}`}>
-                  {statusLabels[getProjectStatus(project)] || '未知'}
+                  {statusLabels[getProjectStatus(project)] || '?'}
                 </Badge>
               </div>
               
               {/* 操作按钮 */}
-              <div className="col-span-2 flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+              <div className="flex gap-1 items-center" onClick={(e) => e.stopPropagation()} style={{ width: `${columnWidths.action}%` }}>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-                  className="text-xs h-7"
+                  className="text-xs h-6 px-1.5"
                 >
                   详情
                 </Button>
@@ -1333,9 +1469,9 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                     size="sm" 
                     onClick={() => handleUrge(project.id)}
                     disabled={urgingProjectId === project.id}
-                    className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
+                    className="text-xs h-6 px-1.5 text-red-600 border-red-200 hover:bg-red-50"
                   >
-                    {urgingProjectId === project.id ? '催办中...' : '催一下'}
+                    {urgingProjectId === project.id ? '...' : '催一下'}
                   </Button>
                 )}
               </div>
@@ -1486,7 +1622,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                 </Card>
               )}
               
-              {/* 没有任何项目时显示提示 */}
+              {/* 没有任何任务时显示提示 */}
               {Object.keys(projectsByType).length === 0 && (
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">
@@ -1503,8 +1639,8 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       <Dialog open={logsDialogOpen} onOpenChange={setLogsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>项目操作记录</DialogTitle>
-            <DialogDescription>查看项目的所有操作历史</DialogDescription>
+            <DialogTitle>任务操作记录</DialogTitle>
+            <DialogDescription>查看任务的所有操作历史</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {logsLoading ? (
@@ -1545,7 +1681,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
           <DialogHeader>
             <DialogTitle>团队成员管理</DialogTitle>
             <DialogDescription>
-              项目：{selectedProjectForTeam?.name}
+              任务：{selectedProjectForTeam?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
