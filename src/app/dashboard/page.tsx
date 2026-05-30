@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -13,6 +15,9 @@ export default function DashboardPage() {
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
   const [filterLoading, setFilterLoading] = useState(false);
   const [filterTitle, setFilterTitle] = useState('');
+  const [filterPage, setFilterPage] = useState(1);
+  const [filterPageSize, setFilterPageSize] = useState(10);
+  const [filterTotal, setFilterTotal] = useState(0);
 
   useEffect(() => {
     fetchStats();
@@ -57,13 +62,13 @@ export default function DashboardPage() {
     }
   };
 
-  const fetchFilteredProjects = async (filter: string) => {
+  const fetchFilteredProjects = async (filter: string, page: number = 1, pageSize: number = filterPageSize) => {
     setFilterLoading(true);
     try {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams();
-      params.append('page', '1');
-      params.append('page_size', '1000');
+      params.append('page', page.toString());
+      params.append('page_size', pageSize.toString());
       
       if (filter === 'all') {
       } else if (filter === 'completed') {
@@ -87,6 +92,7 @@ export default function DashboardPage() {
       const result = await response.json();
       if (result.success) {
         setFilteredProjects(result.data.list || []);
+        setFilterTotal(result.data.pagination?.total || 0);
       }
     } catch (err) {
       console.error('获取筛选数据失败:', err);
@@ -96,13 +102,27 @@ export default function DashboardPage() {
   };
 
   const handleFilterClick = (filter: string, title: string) => {
+    setFilterPage(1);
     if (selectedFilter === filter) {
       setSelectedFilter(null);
       setFilteredProjects([]);
     } else {
       setSelectedFilter(filter);
       setFilterTitle(title);
-      fetchFilteredProjects(filter);
+      fetchFilteredProjects(filter, 1);
+    }
+  };
+
+  const handleFilterPageChange = (newPage: number, newPageSize?: number) => {
+    const pageSize = newPageSize || filterPageSize;
+    if (newPageSize) {
+      setFilterPageSize(newPageSize);
+      setFilterPage(1);
+    } else {
+      setFilterPage(newPage);
+    }
+    if (selectedFilter) {
+      fetchFilteredProjects(selectedFilter, newPageSize ? 1 : newPage, pageSize);
     }
   };
 
@@ -521,6 +541,71 @@ export default function DashboardPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            
+            {filterTotal > 0 && (
+              <div className="flex items-center justify-between py-3 px-4 border-t bg-gray-50 rounded-b-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    共 {filterTotal} 条
+                  </span>
+                  <Select 
+                    value={filterPageSize.toString()} 
+                    onValueChange={(value) => handleFilterPageChange(1, parseInt(value))}
+                  >
+                    <SelectTrigger className="h-7 w-20 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10/页</SelectItem>
+                      <SelectItem value="20">20/页</SelectItem>
+                      <SelectItem value="30">30/页</SelectItem>
+                      <SelectItem value="50">50/页</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleFilterPageChange(1)}
+                    disabled={filterPage <= 1}
+                  >
+                    «
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleFilterPageChange(filterPage - 1)}
+                    disabled={filterPage <= 1}
+                  >
+                    ‹
+                  </Button>
+                  <span className="text-xs px-2">
+                    {filterPage} / {Math.ceil(filterTotal / filterPageSize) || 1}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleFilterPageChange(filterPage + 1)}
+                    disabled={filterPage >= Math.ceil(filterTotal / filterPageSize)}
+                  >
+                    ›
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleFilterPageChange(Math.ceil(filterTotal / filterPageSize))}
+                    disabled={filterPage >= Math.ceil(filterTotal / filterPageSize)}
+                  >
+                    »
+                  </Button>
+                </div>
               </div>
             )}
           </div>
