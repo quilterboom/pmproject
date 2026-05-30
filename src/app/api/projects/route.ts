@@ -15,6 +15,9 @@ export async function GET(request: Request) {
     const managerName = searchParams.get('manager_name');
     const projectTypeId = searchParams.get('project_type_id');
     const moduleId = searchParams.get('module_id');
+    const endDateFrom = searchParams.get('end_date_from');
+    const endDateTo = searchParams.get('end_date_to');
+    const statusNe = searchParams.get('status_ne');
 
     // 获取当前用户
     const authHeader = request.headers.get('authorization');
@@ -37,6 +40,11 @@ export async function GET(request: Request) {
       params.push(status);
     }
 
+    if (statusNe) {
+      whereClause += ' AND p.status != ?';
+      params.push(statusNe);
+    }
+
     if (departmentId) {
       whereClause += ' AND p.department_id = ?';
       params.push(departmentId);
@@ -50,6 +58,16 @@ export async function GET(request: Request) {
     if (moduleId) {
       whereClause += ' AND p.module_id = ?';
       params.push(moduleId);
+    }
+
+    if (endDateFrom) {
+      whereClause += ' AND p.end_date >= TO_DATE(?, \'YYYY-MM-DD\')';
+      params.push(endDateFrom);
+    }
+
+    if (endDateTo) {
+      whereClause += ' AND p.end_date <= TO_DATE(?, \'YYYY-MM-DD\')';
+      params.push(endDateTo);
     }
 
     // 按负责人搜索（模糊匹配）
@@ -219,6 +237,12 @@ export async function POST(request: Request) {
       return dateStr;
     };
     
+    // 根据进度自动设置状态
+    let projectStatus = status || 'planning';
+    if (progress >= 100) {
+      projectStatus = 'completed';
+    }
+    
     console.log('插入项目参数:', { name, description, moduleId, projectTypeId, priority, managerName });
     const result = await execute(`
       INSERT INTO "SYSDBA"."projects" (
@@ -239,7 +263,7 @@ export async function POST(request: Request) {
       formatDateForDB(endDate),
       managerName || null,
       managerPhone || null,
-      status || 'planning',
+      projectStatus,
       progress || 0
     ]);
 

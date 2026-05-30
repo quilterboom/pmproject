@@ -9,6 +9,10 @@ export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState('');
   const [hoveredStatus, setHoveredStatus] = useState<number | null>(null);
   const [hoveredPriority, setHoveredPriority] = useState<number | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [filterTitle, setFilterTitle] = useState('');
 
   useEffect(() => {
     fetchStats();
@@ -50,6 +54,55 @@ export default function DashboardPage() {
       setStats(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFilteredProjects = async (filter: string) => {
+    setFilterLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams();
+      params.append('page', '1');
+      params.append('page_size', '1000');
+      
+      if (filter === 'all') {
+      } else if (filter === 'completed') {
+        params.append('status', 'completed');
+      } else if (filter === 'in_progress') {
+        params.append('status', 'in_progress');
+      } else if (filter === 'upcoming') {
+        const today = new Date();
+        const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+        params.append('end_date_from', today.toISOString().split('T')[0]);
+        params.append('end_date_to', thirtyDaysLater.toISOString().split('T')[0]);
+      } else if (filter === 'overdue') {
+        const today = new Date().toISOString().split('T')[0];
+        params.append('end_date_to', today);
+        params.append('status_ne', 'completed');
+      }
+      
+      const response = await fetch(`/api/projects?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setFilteredProjects(result.data.list || []);
+      }
+    } catch (err) {
+      console.error('获取筛选数据失败:', err);
+    } finally {
+      setFilterLoading(false);
+    }
+  };
+
+  const handleFilterClick = (filter: string, title: string) => {
+    if (selectedFilter === filter) {
+      setSelectedFilter(null);
+      setFilteredProjects([]);
+    } else {
+      setSelectedFilter(filter);
+      setFilterTitle(title);
+      fetchFilteredProjects(filter);
     }
   };
 
@@ -267,7 +320,7 @@ export default function DashboardPage() {
 
         {/* 核心指标卡片 */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all" onClick={() => handleFilterClick('all', '总任务数')}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
                 <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -280,7 +333,7 @@ export default function DashboardPage() {
             <div className="text-gray-400 text-xs mt-1">较上周 +{stats?.overview?.recentProjects || 0}</div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm cursor-pointer hover:border-green-300 hover:shadow-md transition-all" onClick={() => handleFilterClick('completed', '已完成')}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
                 <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -295,7 +348,7 @@ export default function DashboardPage() {
             <div className="text-gray-400 text-xs mt-1">完成率 {getStatusPercent('completed')}%</div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm cursor-pointer hover:border-yellow-300 hover:shadow-md transition-all" onClick={() => handleFilterClick('in_progress', '进行中')}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
                 <svg className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -342,7 +395,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm cursor-pointer hover:border-orange-300 hover:shadow-md transition-all" onClick={() => handleFilterClick('upcoming', '即将到期')}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-gray-500 text-sm">即将到期（30天内）</div>
@@ -356,7 +409,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm cursor-pointer hover:border-red-300 hover:shadow-md transition-all" onClick={() => handleFilterClick('overdue', '已超期')}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-gray-500 text-sm">已超期</div>
@@ -411,6 +464,67 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {selectedFilter && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">{filterTitle} - 详细列表</h3>
+              <button
+                onClick={() => { setSelectedFilter(null); setFilteredProjects([]); }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {filterLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
+                ))}
+              </div>
+            ) : filteredProjects.length === 0 ? (
+              <p className="text-center text-gray-400 py-8">暂无数据</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-2 px-3 font-medium text-gray-600">任务名称</th>
+                      <th className="text-left py-2 px-3 font-medium text-gray-600">状态</th>
+                      <th className="text-left py-2 px-3 font-medium text-gray-600">负责人</th>
+                      <th className="text-left py-2 px-3 font-medium text-gray-600">截止日期</th>
+                      <th className="text-left py-2 px-3 font-medium text-gray-600">优先级</th>
+                      <th className="text-left py-2 px-3 font-medium text-gray-600">进度</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProjects.map((project: any) => (
+                      <tr key={project.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-2 px-3 text-gray-800">{project.name}</td>
+                        <td className="py-2 px-3">
+                          <Badge className={statusColors[project.status] || 'bg-gray-500'}>
+                            {statusLabels[project.status] || project.status}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-3 text-gray-600">{project.manager_name}</td>
+                        <td className="py-2 px-3 text-gray-600">{project.end_date || '-'}</td>
+                        <td className="py-2 px-3">
+                          <Badge variant={project.priority === '1' ? 'destructive' : project.priority === '2' ? 'orange' : 'secondary'}>
+                            {project.priority === '1' ? '高' : project.priority === '2' ? '中' : '低'}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-3 text-gray-600">{project.progress || 0}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
     </div>

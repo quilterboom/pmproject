@@ -46,10 +46,7 @@ export async function GET(request: Request) {
 
     const statusCounts: Record<string, number> = { planning: 0, in_progress: 0, completed: 0, on_hold: 0, cancelled: 0 };
     allProjects.forEach(p => {
-      let status = p.status;
-      if (status !== 'on_hold' && status !== 'cancelled') {
-        status = p.progress === 0 ? 'planning' : p.progress === 100 ? 'completed' : 'in_progress';
-      }
+      const status = p.status;
       statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
     const byStatus = Object.entries(statusCounts).map(([status, count]) => ({ status, count }));

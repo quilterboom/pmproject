@@ -130,14 +130,19 @@ export async function PUT(
     }
 
     // 根据进度自动计算状态
-    let computedStatus = existingProject.status;
+    let computedStatus = status || existingProject.status;
     if (progress !== undefined) {
       if (progress === 0) {
         computedStatus = 'planning';
-      } else if (progress === 100) {
+      } else if (progress >= 100) {
         computedStatus = 'completed';
-      } else if (status === 'planning' || status === 'in_progress') {
-        computedStatus = 'in_progress';
+      } else {
+        computedStatus = existingProject.status;
+        if (computedStatus === 'completed') {
+          computedStatus = 'in_progress';
+        } else if (computedStatus === 'planning') {
+          computedStatus = 'in_progress';
+        }
       }
     }
 
@@ -188,7 +193,7 @@ export async function PUT(
       endDateValue,
       managerName || existingProject.manager_name,
       managerPhone || existingProject.manager_phone,
-      status || computedStatus,
+      computedStatus,
       progress !== undefined ? progress : existingProject.progress,
       id
     ]);
@@ -201,7 +206,7 @@ export async function PUT(
     if (current_progress !== undefined && current_progress !== existingProject.current_progress) changes.push(`进展: ${existingProject.current_progress || '无'} → ${current_progress || '无'}`);
     if (progress !== undefined && progress !== existingProject.progress) changes.push(`进度: ${existingProject.progress}% → ${progress}%`);
     if (managerName && managerName !== existingProject.manager_name) changes.push(`负责人: ${existingProject.manager_name || '无'} → ${managerName}`);
-    if (status || computedStatus !== existingProject.status) changes.push(`状态: ${existingProject.status} → ${status || computedStatus}`);
+    if (computedStatus !== existingProject.status) changes.push(`状态: ${existingProject.status} → ${computedStatus}`);
     const oldEndDate = existingProject.end_date || '';
     if (endDate && endDate !== oldEndDate) {
       changes.push(`预计完成时间: ${oldEndDate || '无'} → ${endDate}`);
