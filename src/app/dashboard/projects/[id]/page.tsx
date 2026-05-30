@@ -145,7 +145,7 @@ const [submitting, setSubmitting] = useState(false);
       });
       const result = await response.json();
       if (result.success) {
-        setUsers(result.data.list || []);
+        setUsers((result.data.list || []).filter((u: any) => u.username !== 'admin'));
       }
     } catch (err) {
       console.error('加载用户列表失败:', err);
@@ -726,7 +726,7 @@ const [submitting, setSubmitting] = useState(false);
                         <p className="text-sm text-muted-foreground">暂无用户可选</p>
                       ) : (
                         users
-                          .filter(u => !managerFilter || (u.real_name || u.username || '').toLowerCase().includes(managerFilter.toLowerCase()))
+                          .filter(u => u.username !== 'admin' && (!managerFilter || (u.real_name || u.username || '').toLowerCase().includes(managerFilter.toLowerCase())))
                           .map((user) => (
                             <div 
                               key={user.id} 

@@ -38,7 +38,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     ? users.filter(u => 
         (u.real_name || u.username || '').toLowerCase().includes(managerFilter.toLowerCase())
       )
-    : users;
+    : users.filter(u => u.username !== 'admin');
 
   const [logsDialogOpen, setLogsDialogOpen] = useState(false);
   const [projectLogs, setProjectLogs] = useState<any[]>([]);
@@ -285,7 +285,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
       });
       const result = await response.json();
       if (result.success) {
-        setUsers(result.data.list);
+        setUsers(result.data.list.filter((u: any) => u.username !== 'admin'));
       }
     } catch (err) {
       console.error('加载用户列表失败:', err);
@@ -1665,7 +1665,7 @@ const [initialLoadComplete, setInitialLoadComplete] = useState(false);
                 <Select value={newMember.userId} onValueChange={v => setNewMember({ ...newMember, userId: v })}>
                   <SelectTrigger className="flex-1"><SelectValue placeholder="选择用户" /></SelectTrigger>
                   <SelectContent>
-                    {users.filter(u => !teamMembers.some(m => m.user_id === u.id)).map(u => (
+                    {users.filter(u => u.username !== 'admin' && !teamMembers.some(m => m.user_id === u.id)).map(u => (
                       <SelectItem key={u.id} value={u.id.toString()}>{u.real_name || u.username}</SelectItem>
                     ))}
                   </SelectContent>
