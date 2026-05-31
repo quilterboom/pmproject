@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/dm-helper';
+import { query, execute } from '@/lib/dm-helper';
 import { getUserFromToken } from '@/lib/auth';
 
 // 暂停项目
@@ -47,12 +47,13 @@ export async function POST(
 
     const currentProject = projects[0];
 
-    // 更新项目状态
+    // 更新项目状态和进展记录
     await query(`
       UPDATE "projects"
-      SET "status" = 'on_hold'
+      SET "status" = 'on_hold',
+          "current_progress" = COALESCE("current_progress", '') || '\n\n【暂停原因】' || ?
       WHERE "id" = ?
-    `, [id]);
+    `, [reason, id]);
 
     // 记录操作日志
     let ipAddress = request.headers.get('x-forwarded-for') ||
@@ -73,28 +74,13 @@ export async function POST(
       on_hold: '已暂停'
     };
 
-    const changes = {
-      status: {
-        label: '项目状态',
-        old: statusLabels[currentProject.status] || currentProject.status,
-        new: '已暂停'
-      }
-    };
+    const oldStatusLabel = statusLabels[currentProject.status] || currentProject.status;
+    const details = `状态: ${oldStatusLabel} → 已暂停\n原因: ${reason}`;
 
-    await query(`
-      INSERT INTO "project_logs" (
-        "project_id", "user_id", "action", "changes", "old_values", "new_values", "description", "ip_address"
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      id,
-      user.id,
-      'paused',
-      JSON.stringify(changes),
-      JSON.stringify({}),
-      JSON.stringify({}),
-      `用户 ${user.real_name} 暂停了项目，原因：${reason}`,
-      ipAddress
-    ]);
+    await execute(`
+      INSERT INTO "SYSDBA"."project_logs" ("project_id", "operator_id", "action", "details")
+      VALUES (?, ?, ?, ?)
+    `, [id, user.id, 'paused', details]);
 
     return NextResponse.json({
       success: true,

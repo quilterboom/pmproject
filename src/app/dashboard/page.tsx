@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PROJECT_STATUS_CONFIG, PROJECT_PRIORITY_CONFIG, STATUS_ORDER, STATUS_PIE_COLORS, PRIORITY_PIE_COLORS } from '@/lib/constants';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -126,24 +127,17 @@ export default function DashboardPage() {
     }
   };
 
-  // 状态颜色映射
-  const statusColors: Record<string, string> = {
-    planning: 'bg-blue-500',
-    in_progress: 'bg-yellow-500', 
-    completed: 'bg-green-500',
-    on_hold: 'bg-orange-500',
-    cancelled: 'bg-red-500',
-  };
+  // 状态颜色映射（从 constants 提取）
+  const statusColors: Record<string, string> = Object.fromEntries(
+    Object.entries(PROJECT_STATUS_CONFIG).map(([key, value]) => [key, value.color])
+  );
 
-  const statusLabels: Record<string, string> = {
-    planning: '规划中',
-    in_progress: '进行中',
-    completed: '已完成',
-    on_hold: '已暂停',
-    cancelled: '已终止',
-  };
+  // 状态标签映射（从 constants 提取）
+  const statusLabels: Record<string, string> = Object.fromEntries(
+    Object.entries(PROJECT_STATUS_CONFIG).map(([key, value]) => [key, value.label])
+  );
 
-  const statusOrder = ['in_progress', 'completed', 'planning', 'on_hold', 'cancelled'];
+  const statusOrder = STATUS_ORDER;
 
   // 计算状态百分比
   const getStatusPercent = (status: string) => {
@@ -152,12 +146,12 @@ export default function DashboardPage() {
     return stats.totalProjects > 0 ? Math.round((item?.count || 0) / stats.totalProjects * 100) : 0;
   };
 
-  // 饼图颜色 - 状态: 规划中、进行中、已完成、已暂停、已终止
-  const pieColors = ['#3b82f6', '#eab308', '#22c55e', '#f97316', '#ef4444'];
-  const priorityColors = ['#ef4444', '#eab308', '#22c55e']; // 高(红)、中(黄)、低(绿)
-  const priorityLabels = ['高', '中', '低'];
-  const statusLabelsArr = ['规划中', '进行中', '已完成', '已暂停', '已终止'];
-  const statusKeys = ['planning', 'in_progress', 'completed', 'on_hold', 'cancelled'];
+  // 饼图颜色
+  const pieColors = STATUS_PIE_COLORS;
+  const priorityColors = PRIORITY_PIE_COLORS;
+  const priorityLabels = Object.values(PROJECT_PRIORITY_CONFIG).map(p => p.label);
+  const statusLabelsArr = Object.values(PROJECT_STATUS_CONFIG).map(s => s.label);
+  const statusKeys = Object.keys(PROJECT_STATUS_CONFIG);
 
   // 渲染交互式饼图（修复版）
   const renderPieChart = (

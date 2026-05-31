@@ -208,7 +208,7 @@ const [submitting, setSubmitting] = useState(false);
           managerIds: managerIds,
           end_date: data.data.end_date ? data.data.end_date.split('T')[0] : '',
           priority: data.data.priority || '2',
-          module_id: data.data.module_id || '',
+          module_id: data.data.module_id ? data.data.module_id.toString() : '',
           project_type_id: data.data.project_type_id ? data.data.project_type_id.toString() : '',
         });
       }
@@ -344,15 +344,15 @@ const [submitting, setSubmitting] = useState(false);
     setPausing(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/projects/${projectId}`, {
-        method: 'PUT',
+      // 使用专门的暂停 API，不会修改其他字段
+      const res = await fetch(`/api/projects/${projectId}/pause`, {
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
         body: JSON.stringify({
-          status: 'on_hold',
-          current_progress: (project.current_progress || '') + '\n\n【暂停原因】' + pauseReason
+          reason: pauseReason
         })
       });
 
@@ -383,15 +383,15 @@ const [submitting, setSubmitting] = useState(false);
     setCancelling(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/projects/${projectId}`, {
-        method: 'PUT',
+      // 使用专门的终止 API，不会修改其他字段
+      const res = await fetch(`/api/projects/${projectId}/terminate`, {
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
         body: JSON.stringify({
-          status: 'cancelled',
-          current_progress: (project.current_progress || '') + '\n\n【终止原因】' + cancelReason
+          reason: cancelReason
         })
       });
 
