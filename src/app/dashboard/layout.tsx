@@ -17,6 +17,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -193,124 +194,142 @@ export default function DashboardLayout({
         }
       `}</style>
       <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
-        <Sidebar collapsible="icon" side="left">
-          <SidebarHeader>
-            <div className="flex items-center gap-2 px-4 py-2">
-              <span className="text-2xl">🚀</span>
-              <span className="text-lg font-bold">任务管理系统</span>
-            </div>
-          </SidebarHeader>
-
-          <SidebarContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    onClick={() => safePush(item.path)}
-                    isActive={pathname === item.path}
-                  >
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarContent>
-
-          <SidebarFooter>
-            <div className="px-4 py-2">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                    {user.realName?.charAt(0) || user.username?.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{user.realName || user.username}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.role === 'admin' ? '管理员' : '普通用户'}</p>
-                  </div>
-                </div>
-                {/* 通知图标 - 所有人都显示 */}
-                <div className="relative">
-                  <button 
-                    onClick={openNotificationPanel}
-                    className="text-xs text-red-500 font-bold hover:bg-gray-100 p-1 rounded"
-                  >
-                    🔔 {unreadCount}
-                  </button>
-                </div>
+        {sidebarVisible && (
+          <Sidebar side="left" className="flex-shrink-0">
+            <SidebarHeader>
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-lg font-bold">任务管理系统</span>
+                <button
+                  onClick={() => setSidebarVisible(false)}
+                  className="w-6 h-6 rounded hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                  title="收起菜单"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
               </div>
-              
-              {/* 通知面板 - 居中弹窗样式 */}
-              {notificationPanelOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setNotificationPanelOpen(false)}>
-                  <div 
-                    ref={panelRef}
-                    className="w-[280px] max-h-[400px] bg-white rounded-lg shadow-lg overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="p-3 border-b flex items-center justify-between">
-                      <span className="font-medium">通知消息</span>
-                      <button 
-                        onClick={() => setNotificationPanelOpen(false)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        ✕
-                      </button>
+            </SidebarHeader>
+
+            <SidebarContent>
+              <SidebarMenu>
+                {menuItems.map((item) => (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      onClick={() => safePush(item.path)}
+                      isActive={pathname === item.path}
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarContent>
+
+            <SidebarFooter className="hidden lg:block">
+              <div className="px-4 py-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                      {user.realName?.charAt(0) || user.username?.charAt(0)}
                     </div>
-                    
-                    {loadingNotifications ? (
-                      <div className="p-4 text-center text-gray-500">加载中...</div>
-                    ) : sortedNotifications.length === 0 ? (
-                      <div className="p-4 text-center text-gray-500">暂无通知</div>
-                    ) : (
-                      <div className="divide-y max-h-[340px] overflow-y-auto">
-                        {sortedNotifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            onClick={() => handleNotificationClick(notification)}
-                            className={`p-3 cursor-pointer hover:bg-gray-50 ${
-                              !notification.is_read ? 'bg-yellow-50' : ''
-                            }`}
-                          >
-                            <div className="flex items-start gap-2">
-                              {!notification.is_read && (
-                                <span className="w-2 h-2 mt-1.5 bg-red-500 rounded-full flex-shrink-0"></span>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className={`text-sm ${!notification.is_read ? 'font-medium' : ''}`}>
-                                  {notification.title}
-                                </p>
-                                {notification.content && (
-                                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                                    {notification.content}
-                                  </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{user.realName || user.username}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.role === 'admin' ? '管理员' : '普通用户'}</p>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button 
+                      onClick={openNotificationPanel}
+                      className="text-xs text-red-500 font-bold hover:bg-gray-100 p-1 rounded"
+                    >
+                      🔔 {unreadCount}
+                    </button>
+                  </div>
+                </div>
+                
+                {notificationPanelOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setNotificationPanelOpen(false)}>
+                    <div 
+                      ref={panelRef}
+                      className="w-[280px] max-h-[400px] bg-white rounded-lg shadow-lg overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="p-3 border-b flex items-center justify-between">
+                        <span className="font-medium">通知消息</span>
+                        <button 
+                          onClick={() => setNotificationPanelOpen(false)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      
+                      {loadingNotifications ? (
+                        <div className="p-4 text-center text-gray-500">加载中...</div>
+                      ) : sortedNotifications.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">暂无通知</div>
+                      ) : (
+                        <div className="divide-y max-h-[340px] overflow-y-auto">
+                          {sortedNotifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`p-3 cursor-pointer hover:bg-gray-50 ${
+                                !notification.is_read ? 'bg-yellow-50' : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-2">
+                                {!notification.is_read && (
+                                  <span className="w-2 h-2 mt-1.5 bg-red-500 rounded-full flex-shrink-0"></span>
                                 )}
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {formatTime(notification.created_at)}
-                                </p>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm ${!notification.is_read ? 'font-medium' : ''}`}>
+                                    {notification.title}
+                                  </p>
+                                  {notification.content && (
+                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                      {notification.content}
+                                    </p>
+                                  )}
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {formatTime(notification.created_at)}
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={handleLogout}
-              >
-                退出登录
-              </Button>
-            </div>
-          </SidebarFooter>
-        </Sidebar>
+                )}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleLogout}
+                >
+                  退出登录
+                </Button>
+              </div>
+            </SidebarFooter>
+          </Sidebar>
+        )}
 
-        <main className="flex-1 overflow-auto">
+        <button
+          onClick={() => setSidebarVisible(true)}
+          className={`fixed left-0 top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 text-gray-600 shadow-md rounded-r-lg px-1.2 py-5 flex flex-col items-center gap-1 border-l-0 ${sidebarVisible ? 'hidden' : ''}`}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+          <span className="text-[9px] font-medium" style={{ writingMode: 'vertical-rl' }}>菜单</span>
+        </button>
+
+        <main className="flex-1 overflow-auto transition-all duration-300">
           {children}
         </main>
       </div>
