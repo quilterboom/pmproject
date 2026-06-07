@@ -218,9 +218,56 @@ curl -X POST http://localhost:5000/api/projects/123/terminate \
   -d '{"reason":"需求变更，项目取消"}'
 ```
 
-## 部署
+## Docker 离线部署
 
-详细部署说明请参考 [DEPLOY.md](./DEPLOY.md)
+### 前置条件
+- 有网络的机器（用于构建镜像）
+- 离线服务器（用于运行 Docker）
+- 达梦数据库已部署并可连接
+
+### 步骤 1：构建镜像
+```bash
+cd pmproject
+docker build -t pm-project .
+docker save pm-project -o pm-project.tar
+```
+
+### 步骤 2：拷贝到离线服务器并加载
+```bash
+scp pm-project.tar user@离线服务器:/path/
+docker load -i pm-project.tar
+```
+
+### 步骤 3：运行容器
+```bash
+docker run -d -p 5000:5000 --name pm-project \
+  -e DB_HOST=数据库地址 \
+  -e DB_PORT=5236 \
+  -e DB_USER=SYSDBA \
+  -e DB_PASSWORD=密码 \
+  -e JWT_SECRET=密钥 \
+  pm-project
+```
+
+### 步骤 4：初始化数据库
+```bash
+# 登录获取 token
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 用返回的 token 初始化数据库
+curl -X POST http://localhost:5000/api/db/init \
+  -H "Authorization: Bearer <返回的token>"
+```
+
+### 验证部署
+```bash
+docker ps | grep pm-project
+docker logs pm-project
+```
+
+详细说明：[DOCKER_README.md](./DOCKER_README.md)
 
 ## 许可证
 

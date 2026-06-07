@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  pm-project:
+    build: .
+    container_name: pm-project
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=${DB_HOST:-localhost}
+      - DB_PORT=${DB_PORT:-5236}
+      - DB_USER=${DB_USER:-SYSDBA}
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-this}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
