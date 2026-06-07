@@ -1,272 +1,227 @@
-# 项目管理系统
+# 项目管理系统 (PM Project)
 
-## 系统简介
+专为仪控部设计的任务管理和数据统计平台。
 
-这是一个专为仪控部设计的项目管理系统，支持部门-科室-模块三级组织架构，提供项目管理、人员管理、数据权限控制等功能。
+## 功能特性
 
-## 组织架构
+### 任务概览
+- 📊 **数据概览仪表盘** - 展示总任务数、已完成、进行中、即将到期、已超期等关键指标
+- 🔗 **指标卡片联动** - 点击任一指标卡片，自动筛选并展示该状态下的详细任务列表
+- 📈 **实时统计** - 按状态、优先级、部门等多维度统计项目数据
 
-### 当前架构
+### 任务管理
+- ✨ **AI 智能创建** - 输入自然语言描述，AI 自动解析生成任务信息
+- 📋 **任务类型分组** - 按任务类型分组展示，支持可拖拽调整列宽
+- 🔍 **多维度筛选** - 支持按状态、优先级、负责人、任务类型、模块筛选
+- ⏰ **进度跟踪** - 实时更新任务进度，支持里程碑管理
+- 🔔 **催办功能** - 一键催办超时任务
+- 👥 **团队协作** - 支持添加项目成员，明确职责分工
 
-```
-仪控部
-├── 保护科
-│   └── 工业机网络安全
-├── 技术管理科
-├── 控制科
-└── 专用系统科
-```
+### 状态管理
+- 🔄 **状态流转** - 规划中 → 进行中 → 已完成
+- ⏸ **暂停/终止** - 专用 API 处理暂停和终止，保留完整历史数据
+- ⚠️ **超期预警** - 自动识别即将到期和已超期任务
 
-### 职能说明
+### AI 功能
+- 🤖 **任务解析** - MiniMax / OpenAI / Anthropic / Ollama 多模型支持
+- 💬 **智能问答** - 基于项目数据的企业知识库问答
+- 📋 **风险分析** - AI 自动分析任务风险并生成建议
 
-#### 部门
-- **仪控部**: 负责仪器设备控制相关工作
+### 数据安全
+- 🔐 **权限分级** - 管理员/经理/成员三级权限体系
+- 🔑 **JWT 认证** - 安全的 Token 认证机制
+- 👤 **数据隔离** - 非管理员只能查看自己负责的任务
 
-#### 科室
-- **保护科**: 负责保护相关工作
-  - 工业机网络安全：负责工业机网络安全工作
-- **技术管理科**: 负责技术管理工作
-- **控制科**: 负责控制相关工作
-- **专用系统科**: 负责专用系统相关工作
+## 技术栈
 
-## 系统功能
-
-### 1. 用户管理
-- ✅ 用户注册（需选择所属部门、科室、模块）
-- ✅ 用户登录（JWT 认证）
-- ✅ 用户列表查看
-- ✅ 用户启用/禁用（仅管理员）
-- ✅ 角色管理（管理员、经理、成员）
-
-### 2. 项目管理
-- ✅ 创建项目
-- ✅ 项目列表查看
-- ✅ 项目状态管理（规划中、进行中、已完成、暂停、已取消）
-- ✅ 项目优先级设置（低、中、高、紧急）
-- ✅ 项目进度跟踪
-- ✅ 按部门、科室、模块分类
-
-### 3. 数据大屏
-- ✅ 项目总览（总数、已完成、进行中、平均进度）
-- ✅ 按状态统计
-- ✅ 按优先级统计
-- ✅ 按部门统计
-- ✅ 最近7天新增项目
-- ✅ 即将到期项目（30天内）
-- ✅ 已超期项目
-
-### 4. 权限控制
-- ✅ 基于 JWT 的身份认证
-- ✅ 角色权限控制（admin、manager、member）
-- ✅ 数据权限隔离（非管理员只能查看同部门数据）
+| 层级 | 技术 | 说明 |
+|------|------|------|
+| 前端框架 | Next.js 16 + React 19 | App Router 架构 |
+| UI 框架 | Tailwind CSS 4 + shadcn/ui | 现代化样式方案 |
+| 状态管理 | Zustand | 轻量级状态管理 |
+| 后端 | Next.js API Routes | 服务端 API |
+| 数据库 | 达梦数据库 (DM) | 国产高性能数据库 |
+| 认证 | JWT + bcryptjs | 安全认证机制 |
 
 ## 快速开始
 
-### 默认账户
-
-- **用户名**: `admin`
-- **密码**: `admin123`
-- **角色**: 管理员
-
-### 访问地址
-
-- **开发环境**: http://localhost:5000
-- **生产环境**: 根据部署配置
-
-### 使用流程
-
-1. **登录系统**: 使用默认账户登录
-2. **添加用户**: 在人员管理页添加团队成员
-3. **创建项目**: 在项目管理页创建新项目
-4. **查看统计**: 在主页查看项目统计信息
-
-## 技术架构
-
-### 后端
-- **框架**: Next.js 16 (App Router)
-- **数据库**: MySQL 5.7+
-- **认证**: JWT (jsonwebtoken)
-- **密码加密**: bcryptjs
-
-### 前端
-- **框架**: React 19
-- **样式**: Tailwind CSS 4
-- **组件库**: shadcn/ui
-- **状态管理**: React Hooks
-
-## 部署说明
-
-详细部署步骤请参考 [DEPLOY.md](./DEPLOY.md)
-
-### 快速部署
-
+### 1. 安装依赖
 ```bash
-# 1. 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，配置数据库连接信息
-
-# 2. 安装依赖
-pnpm install
-
-# 3. 初始化数据库
-curl http://localhost:5000/api/init-db
-
-# 4. 启动服务
-pnpm dev  # 开发模式
-# 或
-pnpm build && pnpm start  # 生产模式
+npm install
 ```
 
-### 使用 PM2 管理进程
+### 2. 配置环境变量
+创建 `.env` 文件：
+```env
+DB_HOST=localhost
+DB_PORT=5236
+DB_NAME=SYSDBA
+DB_USER=your_username
+DB_PASSWORD=your_password
+JWT_SECRET=your_jwt_secret
+```
 
+### 3. 初始化数据库
 ```bash
-# 安装 PM2
-npm install -g pm2
+curl -X POST http://localhost:5000/api/db/init \
+  -H "Authorization: Bearer <管理员token>"
+```
 
-# 启动服务
-pm2 start npm --name "project-management" -- start
+初始化完成后会自动创建：
+- 12 张数据表
+- 默认管理员账号 (admin/admin123)
+- 5 个默认任务类型
 
-# 查看状态
-pm2 status
+### 4. 启动服务
+```bash
+# 开发环境
+npm run dev
 
-# 查看日志
-pm2 logs project-management
+# 生产环境
+pnpm build && NODE_OPTIONS=--openssl-legacy-provider pnpm tsx src/server.ts
+```
 
-# 重启服务
-pm2 restart project-management
+访问 http://localhost:5000
 
-# 停止服务
-pm2 stop project-management
+## 默认账号
+
+| 用户名 | 密码 | 角色 |
+|--------|------|------|
+| admin | admin123 | 管理员 |
+
+## 项目结构
+
+```
+src/
+├── app/
+│   ├── api/                    # API 路由
+│   │   ├── auth/              # 认证 (login/register/me)
+│   │   ├── projects/         # 项目管理 (CRUD + terminate/pause)
+│   │   ├── users/            # 用户管理
+│   │   ├── dashboard/        # 统计数据
+│   │   ├── db/               # 数据库初始化
+│   │   └── ai/               # AI 功能
+│   └── dashboard/            # 管理后台页面
+│       ├── projects/          # 项目列表/详情
+│       ├── users/             # 用户管理
+│       └── model-config/      # AI 模型配置
+├── components/
+│   └── projects/             # 项目模块组件
+│       ├── FilterBar.tsx      # 筛选栏
+│       ├── Pagination.tsx      # 分页组件
+│       ├── ProjectCard.tsx    # 项目卡片
+│       ├── ProjectHeader.tsx  # 表头
+│       ├── ProjectFormDialog.tsx # 新建/编辑
+│       ├── LogsDialog.tsx      # 操作记录
+│       ├── TeamDialog.tsx     # 团队成员
+│       └── ConfirmDialog.tsx  # 确认对话框
+├── stores/                    # Zustand 状态管理
+├── hooks/                     # 自定义 Hooks
+├── lib/                       # 工具函数
+│   ├── dm-helper.ts          # 数据库操作
+│   ├── constants.ts          # 常量配置
+│   └── api-response.ts       # API 响应封装
+└── types/                    # TypeScript 类型
 ```
 
 ## API 接口
 
-### 认证接口
-- `POST /api/auth/login` - 用户登录
-- `POST /api/auth/register` - 用户注册
-- `GET /api/auth/me` - 获取当前用户信息
+### 认证
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/auth/login` | 用户登录 |
+| POST | `/api/auth/register` | 用户注册 |
+| GET | `/api/auth/me` | 获取当前用户 |
 
-### 组织架构接口
-- `GET /api/departments` - 获取部门列表
-- `GET /api/offices?department_id=1` - 获取科室列表
-- `GET /api/modules?office_id=1` - 获取模块列表
+### 用户管理
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/users` | 用户列表 |
+| POST | `/api/users` | 创建用户 |
+| PUT | `/api/users/[id]` | 更新用户 |
+| DELETE | `/api/users/[id]` | 删除用户 |
 
-### 项目管理接口
-- `GET /api/projects` - 获取项目列表
-- `POST /api/projects` - 创建项目
-- `GET /api/projects/[id]` - 获取项目详情
-- `PUT /api/projects/[id]` - 更新项目
-- `DELETE /api/projects/[id]` - 删除项目
+### 项目管理
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/projects` | 项目列表（支持分页、筛选） |
+| POST | `/api/projects` | 创建项目 |
+| GET | `/api/projects/[id]` | 项目详情 |
+| PUT | `/api/projects/[id]` | 更新项目 |
+| DELETE | `/api/projects/[id]` | 删除项目 |
+| POST | `/api/projects/[id]/terminate` | 终止项目 |
+| POST | `/api/projects/[id]/pause` | 暂停项目 |
 
-### 用户管理接口
-- `GET /api/users` - 获取用户列表
-- `POST /api/users` - 创建用户（仅管理员）
-- `GET /api/users/[id]` - 获取用户详情
-- `PUT /api/users/[id]` - 更新用户
-- `DELETE /api/users/[id]` - 删除用户（仅管理员）
+### 数据统计
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/dashboard/stats` | 仪表盘统计 |
+| GET | `/api/departments` | 部门列表 |
+| GET | `/api/modules` | 模块列表 |
+| GET | `/api/project-types` | 任务类型列表 |
 
-### 数据统计接口
-- `GET /api/dashboard/stats` - 获取项目统计数据
+### AI 功能
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/ai/parse-task` | AI 解析任务描述 |
+| POST | `/api/ai/chat` | AI 问答 |
+| POST | `/api/ai/analyze-tasks` | AI 风险分析 |
 
-### 系统管理接口
-- `GET /api/init-db` - 初始化数据库
-- `GET /api/clear-db` - 清空数据库（谨慎使用）
+### 系统管理
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/db/init` | 初始化数据库 |
+| GET | `/api/notifications` | 通知列表 |
+| POST | `/api/notifications/urge` | 发送催办 |
 
-## 数据库表结构
+## 数据库表
 
-### departments（部门表）
-- `id` - 主键
-- `name` - 部门名称
-- `description` - 部门描述
+| 表名 | 说明 |
+|------|------|
+| users | 用户表 |
+| departments | 部门表 |
+| offices | 科室表 |
+| modules | 模块表 |
+| projects | 项目表 |
+| project_types | 任务类型表 |
+| project_members | 项目成员表 |
+| project_logs | 操作日志表 |
+| milestones | 里程碑表 |
+| tasks | 子任务表 |
+| notifications | 通知表 |
+| model_configs | AI 模型配置表 |
 
-### offices（科室表）
-- `id` - 主键
-- `department_id` - 所属部门
-- `name` - 科室名称
-- `description` - 科室描述
+## 常用操作
 
-### modules（模块表）
-- `id` - 主键
-- `office_id` - 所属科室
-- `name` - 模块名称
-- `description` - 模块描述
+### 筛选项目
+```
+GET /api/projects?status=in_progress&priority=1&page=1&page_size=20
+```
 
-### users（用户表）
-- `id` - 主键
-- `username` - 用户名
-- `password` - 密码（加密）
-- `real_name` - 真实姓名
-- `email` - 邮箱
-- `phone` - 电话
-- `department_id` - 所属部门
-- `office_id` - 所属科室
-- `module_id` - 所属模块
-- `role` - 角色（admin、manager、member）
-- `status` - 状态（active、inactive）
+### AI 智能创建任务
+```bash
+# 1. AI 解析自然语言描述
+curl -X POST http://localhost:5000/api/ai/parse-task \
+  -H "Content-Type: application/json" \
+  -d '{"description":"完成用户登录页面，优先级高"}'
 
-### projects（项目表）
-- `id` - 主键
-- `name` - 项目名称
-- `code` - 项目编号
-- `description` - 项目描述
-- `department_id` - 所属部门
-- `office_id` - 所属科室
-- `module_id` - 所属模块
-- `manager_id` - 项目经理
-- `start_date` - 开始日期
-- `end_date` - 结束日期
-- `status` - 状态
-- `progress` - 进度（0-100）
-- `priority` - 优先级
-- `budget` - 预算
-- `actual_cost` - 实际花费
+# 2. 使用解析结果创建项目
+curl -X POST http://localhost:5000/api/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name":"用户登录页面","priority":"1",...}'
+```
 
-### project_members（项目成员表）
-- `id` - 主键
-- `project_id` - 项目ID
-- `user_id` - 用户ID
-- `role` - 在项目中的角色
+### 终止任务
+```bash
+curl -X POST http://localhost:5000/api/projects/123/terminate \
+  -H "Content-Type: application/json" \
+  -d '{"reason":"需求变更，项目取消"}'
+```
 
-### user_permissions（用户权限表）
-- `id` - 主键
-- `user_id` - 用户ID
-- `permission_type` - 权限类型
-- `target_id` - 目标ID
+## 部署
 
-## 注意事项
+详细部署说明请参考 [DEPLOY.md](./DEPLOY.md)
 
-### 安全提示
-1. ⚠️ 首次登录后请立即修改默认密码
-2. ⚠️ 生产环境务必修改 JWT_SECRET
-3. ⚠️ 定期备份数据库
-4. ⚠️ 不要使用 `/api/clear-db` 清空生产数据库
+## 许可证
 
-### 性能优化
-1. 建议对常用查询字段建立索引
-2. 定期清理过期数据
-3. 使用 PM2 或其他进程管理工具
-
-### 扩展建议
-1. 可以添加项目文件上传功能
-2. 可以添加项目评论/讨论功能
-3. 可以添加项目里程碑管理
-4. 可以添加任务管理和甘特图
-5. 可以添加报表导出功能
-
-## 问题反馈
-
-如有问题或建议，请联系系统管理员。
-
-## 更新日志
-
-### v1.0.0 (2026-04-05)
-- ✅ 完成基础功能开发
-- ✅ 实现登录注册功能
-- ✅ 实现项目大屏展示
-- ✅ 实现项目管理功能
-- ✅ 实现人员管理功能
-- ✅ 实现数据权限控制
-- ✅ 配置仪控部组织架构
-  - 部门：仪控部
-  - 科室：保护科、技术管理科、控制科、专用系统科
-  - 模块：工业机网络安全
+MIT
