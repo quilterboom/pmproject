@@ -1,0 +1,34 @@
+# 依赖与构建产物（将在镜像内重新安装/构建）
+node_modules
+.next
+dist
+out
+coverage
+
+# 版本控制
+.git
+.gitignore
+
+# 大文件与压缩包（pm-project.tar 约 431MB，绝不能打进构建上下文）
+*.tar
+*.tgz
+*.zip
+pm-project.tar
+
+# 本地环境变量（避免把密钥打进镜像）
+.env
+.env.*
+!.env.example
+
+# 系统/编辑器文件
+.DS_Store
+*.log
+npm-debug.log*
+.pnpm-debug.log*
+
+# 文档与无关目录
+docs
+README.md
+DOCKER_README.md
+DEPLOY.md
+AGENTS.md

@@ -7,8 +7,7 @@ const dev = false; // 强制使用生产模式
 // 禁用开发工具
 process.env.NEXT_DISABLE_DEVTOOLS = '1';
 const hostname = process.env.HOSTNAME || 'localhost';
-// const port = parseInt(process.env.PORT || '5000', 10);
-const port = parseInt(process.env.PORT || '5020', 10);
+const port = parseInt(process.env.PORT || '5000', 10);
 
 // Create Next.js app
 const app = next({ dev, hostname, port });
@@ -29,7 +28,7 @@ app.prepare().then(() => {
     console.error(err);
     process.exit(1);
   });
-  server.listen(port, () => {
+  server.listen(port, '0.0.0.0', () => {
     console.log(
       `> Server listening at http://${hostname}:${port} as ${
         dev ? 'development' : process.env.COZE_PROJECT_ENV

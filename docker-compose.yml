@@ -2,19 +2,25 @@ version: '3.8'
 
 services:
   pm-project:
-    build: .
+    image: pm-project:deploy
     container_name: pm-project
     ports:
-      - "5000:5000"
+      - "${PORT:-5000}:5000"
     environment:
-      - DB_HOST=${DB_HOST:-localhost}
+      - NODE_ENV=production
+      # 达梦驱动需要旧版 OpenSSL
+      - NODE_OPTIONS=--openssl-legacy-provider
+      - PORT=5000
+      # 达梦数据库连接（默认指向项目配套的远程库，可用 .env 覆盖）
+      - DB_HOST=${DB_HOST:-129.226.220.194}
       - DB_PORT=${DB_PORT:-5236}
       - DB_USER=${DB_USER:-SYSDBA}
-      - DB_PASSWORD=${DB_PASSWORD:-password}
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-this}
+      - DB_PASSWORD=${DB_PASSWORD:-SYSDBA000}
+      - JWT_SECRET=${JWT_SECRET:-please-change-this-in-production}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
       interval: 30s
-      timeout: 3s
+      timeout: 5s
       retries: 3
+      start_period: 30s

@@ -62,7 +62,8 @@ export default function UsersPage() {
     departmentId: '',
     officeId: '',
     moduleId: '',
-    role: 'member'
+    role: 'member',
+    status: 'active'
   });
 
   useEffect(() => {
@@ -238,7 +239,8 @@ export default function UsersPage() {
       departmentId: '',
       officeId: '',
       moduleId: '',
-      role: 'member'
+      role: 'member',
+      status: 'active'
     });
     setIsEditMode(false);
     setEditingUserId(null);
