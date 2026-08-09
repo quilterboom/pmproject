@@ -94,7 +94,7 @@ export function TeamDialog({
             <div className="space-y-2 max-h-80 overflow-y-auto">
               {members.map(member => (
                 <div key={member.id} className="flex items-center gap-3 p-3 border rounded-md">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
+                  <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-sm">
                     {(member.real_name || member.username || '?').charAt(0)}
                   </div>
                   <div className="flex-1">

@@ -161,7 +161,7 @@ export default function DashboardLayout({
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-brand-600 mx-auto mb-4"></div>
           <p className="text-muted-foreground">加载中...</p>
         </div>
       </div>
@@ -177,12 +177,39 @@ export default function DashboardLayout({
   });
 
   const menuItems = [
-    { icon: '📊', label: '任务大屏', path: '/dashboard' },
-    { icon: '📋', label: '任务管理', path: '/dashboard/projects' },
+    {
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 15h7v6H3z" />
+        </svg>
+      ),
+      label: '任务大屏', path: '/dashboard'
+    },
+    {
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      ),
+      label: '任务管理', path: '/dashboard/projects'
+    },
     ...(user.role === 'admin' ? [
-      { icon: '🤖', label: '模型配置', path: '/dashboard/model-config' },
-      { icon: '👥', label: '人员管理', path: '/dashboard/users' },
-      
+      {
+        icon: (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2M7 7h10v10H7z" />
+          </svg>
+        ),
+        label: '模型配置', path: '/dashboard/model-config'
+      },
+      {
+        icon: (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+          </svg>
+        ),
+        label: '人员管理', path: '/dashboard/users'
+      },
     ] : []),
   ];
 
@@ -196,12 +223,22 @@ export default function DashboardLayout({
       <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
         {sidebarVisible && (
           <Sidebar side="left" className="flex-shrink-0">
-            <SidebarHeader>
-              <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-lg font-bold">任务管理系统</span>
+            <SidebarHeader className="bg-brand-600 text-white p-0">
+              <div className="flex items-center justify-between h-14 px-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                    </svg>
+                  </div>
+                  <span className="text-base font-bold text-white">任务管理系统</span>
+                </div>
                 <button
                   onClick={() => setSidebarVisible(false)}
-                  className="w-6 h-6 rounded hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                  className="w-7 h-7 rounded-md hover:bg-white/15 flex items-center justify-center text-white/80"
                   title="收起菜单"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -218,8 +255,11 @@ export default function DashboardLayout({
                     <SidebarMenuButton
                       onClick={() => safePush(item.path)}
                       isActive={pathname === item.path}
+                      className={pathname === item.path
+                        ? '!bg-brand-50 !text-brand-700 font-semibold relative before:content-[""] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-1 before:rounded-r-md before:bg-brand-600'
+                        : 'text-gray-600 hover:!bg-gray-100 hover:!text-gray-900'}
                     >
-                      <span>{item.icon}</span>
+                      {item.icon}
                       <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -231,7 +271,7 @@ export default function DashboardLayout({
               <div className="px-4 py-2">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                    <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white">
                       {user.realName?.charAt(0) || user.username?.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -321,7 +361,7 @@ export default function DashboardLayout({
 
         <button
           onClick={() => setSidebarVisible(true)}
-          className={`fixed left-0 top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 text-gray-600 shadow-md rounded-r-lg px-1.2 py-5 flex flex-col items-center gap-1 border-l-0 ${sidebarVisible ? 'hidden' : ''}`}
+          className={`fixed left-0 top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 text-brand-600 shadow-md rounded-r-lg px-1.2 py-5 flex flex-col items-center gap-1 border-l-0 ${sidebarVisible ? 'hidden' : ''}`}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>

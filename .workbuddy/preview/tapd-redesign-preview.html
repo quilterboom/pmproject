@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>任务管理系统 · TAPD 风格预览</title>
+<style>
+  :root{
+    --blue:#0052d9; --blue-dark:#0046b8; --blue-light:#ecf2ff; --blue-50:#f5f8ff;
+    --green:#16a34a; --yellow:#f59e0b; --orange:#f97316; --red:#ef4444; --cyan:#0ea5e9;
+    --text:#1f2937; --sub:#6b7280; --bg:#f5f7fa; --card:#ffffff; --border:#e6e8eb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'PingFang SC','Microsoft YaHei',ui-sans-serif,system-ui,sans-serif;}
+  body{background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
+  .preview-note{background:#fffbe6;border-bottom:1px solid #ffe58f;color:#8a6d00;font-size:13px;padding:10px 20px;text-align:center;}
+  .section-label{font-size:13px;font-weight:600;color:var(--sub);padding:24px 28px 12px;letter-spacing:.5px;}
+
+  /* ===== 登录页 ===== */
+  .login{display:flex;min-height:520px;}
+  .login-left{width:46%;background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;}
+  .login-left::before{content:'';position:absolute;top:-80px;right:-80px;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.10);}
+  .login-left::after{content:'';position:absolute;bottom:-90px;left:-60px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.08);}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;position:relative;}
+  .brand .logo{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;}
+  .hero{position:relative;}
+  .hero h1{font-size:34px;line-height:1.3;font-weight:700;}
+  .hero p{margin-top:16px;font-size:16px;color:rgba(255,255,255,.82);line-height:1.7;max-width:420px;}
+  .hero ul{margin-top:24px;display:flex;flex-direction:column;gap:14px;}
+  .hero li{display:flex;align-items:center;gap:12px;font-size:15px;color:rgba(255,255,255,.92);}
+  .hero li .chk{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .copy{position:relative;font-size:13px;color:rgba(255,255,255,.6);}
+  .login-right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px;}
+  .form-card{width:100%;max-width:340px;}
+  .form-card h2{font-size:24px;font-weight:700;}
+  .form-card .sub{color:var(--sub);margin:6px 0 28px;font-size:14px;}
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;}
+  .field input{width:100%;height:42px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-size:14px;outline:none;transition:.2s;}
+  .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,82,217,.12);}
+  .btn-primary{width:100%;height:44px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:.2s;}
+  .btn-primary:hover{background:var(--blue-dark);}
+  .reg{text-align:center;font-size:13px;color:var(--sub);margin-top:18px;}
+  .reg a{color:var(--blue);font-weight:500;text-decoration:none;}
+
+  /* ===== 应用框架 ===== */
+  .app{display:flex;min-height:560px;border-top:1px solid var(--border);}
+  .sidebar{width:220px;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;}
+  .sb-head{height:56px;background:var(--blue);color:#fff;display:flex;align-items:center;gap:8px;padding:0 16px;font-weight:700;}
+  .sb-head .logo{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;}
+  .sb-nav{padding:10px 10px;flex:1;}
+  .sb-nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--sub);font-size:14px;font-weight:500;cursor:pointer;position:relative;margin-bottom:2px;text-decoration:none;}
+  .sb-nav a:hover{background:#f3f4f6;color:var(--text);}
+  .sb-nav a.active{background:var(--blue-50);color:var(--blue);font-weight:600;}
+  .sb-nav a.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);height:20px;width:3px;border-radius:0 3px 3px 0;background:var(--blue);}
+  .sb-foot{padding:12px 14px;border-top:1px solid var(--border);}
+  .sb-user{display:flex;align-items:center;gap:10px;}
+  .sb-user .av{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;}
+  .sb-user .meta{flex:1;min-width:0;}
+  .sb-user .meta .n{font-size:13px;font-weight:600;}
+  .sb-user .meta .r{font-size:11px;color:var(--sub);}
+  .sb-logout{width:100%;margin-top:10px;height:32px;border:1px solid var(--border);background:#fff;border-radius:7px;font-size:13px;color:var(--sub);cursor:pointer;}
+  .sb-logout:hover{background:#f3f4f6;}
+
+  .content{flex:1;padding:24px;overflow:auto;}
+  .page-head{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .page-head .left{display:flex;align-items:center;gap:14px;}
+  .page-head .ic{width:46px;height:46px;border-radius:12px;background:var(--blue);display:flex;align-items:center;justify-content:center;}
+  .page-head h1{font-size:20px;font-weight:700;}
+  .page-head .t{font-size:13px;color:var(--sub);margin-top:2px;}
+  .page-head .right{text-align:right;}
+  .page-head .right .num{font-size:30px;font-weight:800;color:var(--blue);line-height:1;}
+  .page-head .right .lbl{font-size:12px;color:var(--sub);margin-top:4px;}
+
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:.2s;}
+  .kpi:hover{border-color:#b9c8ee;box-shadow:0 4px 14px rgba(0,82,217,.08);}
+  .kpi .top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .kpi .ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+  .kpi .lbl{font-size:13px;color:var(--sub);font-weight:500;}
+  .kpi .val{font-size:28px;font-weight:800;color:var(--text);}
+  .kpi .hint{font-size:12px;color:var(--sub);margin-top:2px;}
+
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .panel h3{font-size:14px;font-weight:600;color:var(--text);text-align:center;margin-bottom:14px;}
+  .mini{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .mini .l{font-size:13px;color:var(--sub);}
+  .mini .v{font-size:24px;font-weight:800;}
+  .pie-wrap{display:flex;align-items:center;justify-content:center;gap:16px;}
+  .pie{width:120px;height:120px;border-radius:50%;}
+  .legend{display:flex;flex-direction:column;gap:8px;}
+  .legend .it{display:flex;align-items:center;gap:8px;font-size:12px;color:#4b5563;}
+  .legend .dot{width:10px;height:10px;border-radius:50%;}
+</style>
+</head>
+<body>
+  <div class="preview-note">设计预览稿 · 配色与布局与代码改动一致（主色 #0052D9）。这是静态示意，实际页面由 Next.js 渲染。</div>
+
+  <div class="section-label">① 登录页 · 左右分栏</div>
+  <div class="login">
+    <div class="login-left">
+      <div class="brand">
+        <span class="logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </span>
+        任务管理系统
+      </div>
+      <div class="hero">
+        <h1>让团队协作<br/>更高效、更透明</h1>
+        <p>统一跟踪任务进度、里程碑与风险，实时掌握项目全局状态。</p>
+        <ul>
+          <li><span class="chk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>任务看板一目了然，进度实时可见</li>
+          <li><span class="chk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>多维度筛选、催办与团队成员协同</li>
+          <li><span class="chk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>AI 智能解析自然语言生成任务</li>
+        </ul>
+      </div>
+      <div class="copy">© 2026 任务管理系统 · 仪控部</div>
+    </div>
+    <div class="login-right">
+      <div class="form-card">
+        <h2>登录</h2>
+        <p class="sub">请输入您的账户信息以继续</p>
+        <div class="field"><label>用户名</label><input placeholder="请输入用户名"/></div>
+        <div class="field"><label>密码</label><input type="password" placeholder="请输入密码"/></div>
+        <button class="btn-primary">登录</button>
+        <p class="reg">还没有账户？<a href="#">立即注册</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">② 侧边栏 + 任务大屏</div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sb-head">
+        <span class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+        任务管理系统
+      </div>
+      <nav class="sb-nav">
+        <a class="active" href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 15h7v6H3z"/></svg>
+          任务大屏
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          任务管理
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2M7 7h10v10H7z"/></svg>
+          模型配置
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          人员管理
+        </a>
+      </nav>
+      <div class="sb-foot">
+        <div class="sb-user">
+          <span class="av">张</span>
+          <div class="meta"><div class="n">张伟</div><div class="r">管理员</div></div>
+        </div>
+        <button class="sb-logout">退出登录</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="page-head">
+        <div class="left">
+          <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 15h7v6H3z"/></svg></span>
+          <div><h1>任务概览</h1><div class="t">2026年8月9日 星期日 10:37</div></div>
+        </div>
+        <div class="right"><div class="num">128</div><div class="lbl">任务总数</div></div>
+      </div>
+
+      <div class="cards">
+        <div class="kpi">
+          <div class="top"><span class="ic" style="background:var(--blue-50)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span><span class="lbl">总任务数</span></div>
+          <div class="val">128</div><div class="hint">较上周 +12</div>
+        </div>
+        <div class="kpi">
+          <div class="top"><span class="ic" style="background:#e7f6ec"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></span><span class="lbl">已完成</span></div>
+          <div class="val">76</div><div class="hint">完成率 59%</div>
+        </div>
+        <div class="kpi">
+          <div class="top"><span class="ic" style="background:#fef4e2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></span><span class="lbl">进行中</span></div>
+          <div class="val">34</div><div class="hint">占比 27%</div>
+        </div>
+        <div class="kpi">
+          <div class="top"><span class="ic" style="background:var(--blue-50)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></span><span class="lbl">平均进度</span></div>
+          <div class="val">63%</div><div class="hint">整体进度</div>
+        </div>
+      </div>
+
+      <div class="row3">
+        <div class="panel">
+          <div class="mini"><div class="l">最近7天新增</div><div class="v" style="color:var(--blue)">12</div></div>
+          <div class="mini"><div class="l">即将到期（30天内）</div><div class="v" style="color:var(--orange)">8</div></div>
+          <div class="mini"><div class="l">已超期</div><div class="v" style="color:var(--red)">5</div></div>
+        </div>
+        <div class="panel">
+          <h3>任务状态分布</h3>
+          <div class="pie-wrap">
+            <div class="pie" style="background:conic-gradient(var(--blue) 0 40%, var(--cyan) 40% 60%, var(--green) 60% 78%, var(--yellow) 78% 92%, var(--red) 92% 100%);"></div>
+            <div class="legend">
+              <div class="it"><span class="dot" style="background:var(--blue)"></span>规划中 40%</div>
+              <div class="it"><span class="dot" style="background:var(--cyan)"></span>进行中 20%</div>
+              <div class="it"><span class="dot" style="background:var(--green)"></span>已完成 18%</div>
+              <div class="it"><span class="dot" style="background:var(--yellow)"></span>已暂停 14%</div>
+              <div class="it"><span class="dot" style="background:var(--red)"></span>已终止 8%</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>优先级分布</h3>
+          <div class="pie-wrap">
+            <div class="pie" style="background:conic-gradient(var(--red) 0 30%, var(--yellow) 30% 65%, var(--green) 65% 100%);"></div>
+            <div class="legend">
+              <div class="it"><span class="dot" style="background:var(--red)"></span>高 30%</div>
+              <div class="it"><span class="dot" style="background:var(--yellow)"></span>中 35%</div>
+              <div class="it"><span class="dot" style="background:var(--green)"></span>低 35%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

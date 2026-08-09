@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tags } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 
 interface ProjectType {
   id: number;
@@ -138,7 +140,7 @@ export default function ProjectTypesPage() {
   };
 
   const colorOptions = [
-    { value: '#3b82f6', label: '蓝色', bg: 'bg-blue-500' },
+    { value: '#3b82f6', label: '蓝色', bg: 'bg-brand-500' },
     { value: '#22c55e', label: '绿色', bg: 'bg-green-500' },
     { value: '#f59e0b', label: '橙色', bg: 'bg-orange-500' },
     { value: '#ef4444', label: '红色', bg: 'bg-red-500' },
@@ -162,9 +164,12 @@ export default function ProjectTypesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">项目类型管理</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <PageHeader
+        title="项目类型管理"
+        description="维护项目分类与颜色标识"
+        icon={<Tags className="h-5 w-5" />}
+        action={
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
               新建项目类型
@@ -237,8 +242,9 @@ export default function ProjectTypesPage() {
               </DialogFooter>
             </form>
           </DialogContent>
-        </Dialog>
-      </div>
+          </Dialog>
+        }
+      />
 
       <div className="grid gap-4">
         {types.length === 0 ? (

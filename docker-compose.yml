@@ -2,19 +2,30 @@ version: '3.8'
 
 services:
   pm-project:
-    build: .
+    build:
+      context: .
+      args:
+        # 前端接口基础地址：默认相对 /api（前后端同源，容器自洽）
+        - NEXT_PUBLIC_API_BASE=/api
+        # 站点公开地址（OpenGraph 分享用），按需改成实际域名
+        - NEXT_PUBLIC_SITE_URL=http://localhost:5000
     container_name: pm-project
     ports:
       - "5000:5000"
     environment:
-      - DB_HOST=${DB_HOST:-localhost}
-      - DB_PORT=${DB_PORT:-5236}
-      - DB_USER=${DB_USER:-SYSDBA}
-      - DB_PASSWORD=${DB_PASSWORD:-password}
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-this}
+      # 绑定到 0.0.0.0，否则容器内只监听 127.0.0.1，宿主机端口映射进不来
+      - HOSTNAME=0.0.0.0
+      - PORT=5000
+      # 达梦数据库连接（与 src/lib/db.ts 默认值一致）
+      - DB_HOST=129.226.220.194
+      - DB_PORT=5236
+      - DB_USER=SYSDBA
+      - DB_PASSWORD=SYSDBA000
+      - JWT_SECRET=change-this-to-a-strong-secret
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000"]
       interval: 30s
       timeout: 3s
       retries: 3
+      start_period: 30s

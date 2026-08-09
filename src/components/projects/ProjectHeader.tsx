@@ -38,7 +38,7 @@ export function ProjectHeader({ columnWidths, resizing, onResizeStart }: Project
               onMouseDown={(e) => onResizeStart(key, e)}
             >
               <div 
-                className={`h-full w-0.5 transition-colors rounded ${resizing === key ? 'bg-blue-500' : 'bg-gray-300 hover:bg-blue-500'}`}
+                className={`h-full w-0.5 transition-colors rounded ${resizing === key ? 'bg-brand-500' : 'bg-gray-300 hover:bg-brand-500'}`}
               />
             </div>
           )}

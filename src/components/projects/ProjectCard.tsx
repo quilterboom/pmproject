@@ -37,7 +37,7 @@ export function ProjectCard({
     >
       <div className="min-w-0" style={{ width: `${columnWidths.name}%` }}>
         <span 
-          className="font-medium text-sm truncate cursor-pointer hover:text-blue-600 block"
+          className="font-medium text-sm truncate cursor-pointer hover:text-brand-600 block"
           onClick={() => router.push(`/dashboard/projects/${project.id}`)}
         >
           {project.name}
@@ -86,7 +86,7 @@ export function ProjectCard({
             className={cn(
               "h-full rounded-full",
               projectStatus === 'completed' ? 'bg-green-500' : 
-              projectStatus === 'overdue' ? 'bg-red-500' : 'bg-blue-500'
+              projectStatus === 'overdue' ? 'bg-red-500' : 'bg-brand-500'
             )}
             style={{ width: `${project.progress || 0}%` }}
           />

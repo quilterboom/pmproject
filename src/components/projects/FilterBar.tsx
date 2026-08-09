@@ -23,12 +23,12 @@ export function FilterBar() {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <div className="relative">
+      <div className="relative flex-1 min-w-[200px]">
         <Input
           placeholder="搜索任务名称、描述、编号..."
           value={filters.searchKeyword}
           onChange={(e) => setFilter('searchKeyword', e.target.value)}
-          className="w-64"
+          className="w-full"
         />
         {filters.searchKeyword && (
           <button

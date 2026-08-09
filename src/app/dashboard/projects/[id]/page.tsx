@@ -27,7 +27,7 @@ import {
 
 // 状态颜色映射
 const statusColors: Record<string, string> = {
-  planning: 'bg-blue-500',
+  planning: 'bg-brand-500',
   in_progress: 'bg-yellow-500',
   completed: 'bg-green-500',
   on_hold: 'bg-orange-500',
@@ -538,9 +538,9 @@ const [submitting, setSubmitting] = useState(false);
 
             {/* 当前进展 */}
             {project.current_progress && (
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg border">
-                <div className="text-sm font-medium text-blue-800 mb-2">当前进展</div>
-                <div className="text-sm text-blue-700 whitespace-pre-wrap">{project.current_progress}</div>
+              <div className="mb-6 p-4 bg-brand-50 rounded-lg border border-brand-200">
+                <div className="text-sm font-medium text-brand-800 mb-2">当前进展</div>
+                <div className="text-sm text-brand-700 whitespace-pre-wrap">{project.current_progress}</div>
               </div>
             )}
           </CardContent>

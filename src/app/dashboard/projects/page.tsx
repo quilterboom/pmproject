@@ -33,6 +33,8 @@ import {
   ProjectHeader
 } from '@/components/projects';
 import { useProjectStore } from '@/stores';
+import { LayoutGrid } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 
 // ============================================================
 // 区域二：状态定义（使用 zustand 管理）
@@ -767,7 +769,7 @@ export default function ProjectsPage() {
   };
 
   const statusColors: Record<string, string> = {
-    planning: 'bg-blue-500',
+    planning: 'bg-brand-500',
     in_progress: 'bg-yellow-500',
     completed: 'bg-green-500',
     on_hold: 'bg-orange-500',
@@ -848,7 +850,7 @@ export default function ProjectsPage() {
 
   const actionColors: Record<string, string> = {
     created: 'bg-green-500',
-    updated: 'bg-blue-500',
+    updated: 'bg-brand-500',
     deleted: 'bg-red-500',
     terminated: 'bg-red-600',
     paused: 'bg-orange-500'
@@ -899,13 +901,16 @@ export default function ProjectsPage() {
   // ============================================================
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-        </div>
-        <div className="flex gap-2">
-          {/* 筛选栏 */}
-          <FilterBar />
+      <PageHeader
+        title="任务管理"
+        description="按项目类型分组查看与跟踪所有任务"
+        icon={<LayoutGrid className="h-5 w-5" />}
+      />
+      <div className="flex flex-wrap items-center gap-3">
+        {/* 筛选栏 */}
+        <FilterBar />
 
+        <div className="ml-auto">
           <ProjectFormDialog
             open={dialogOpen}
             onOpenChange={setDialogOpen}

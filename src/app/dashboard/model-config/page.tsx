@@ -11,6 +11,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter 
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { Bot } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 
 // 服务商选项
 const providerOptions = [
@@ -229,17 +231,17 @@ const handleOpenDialog = (config?: any) => {
         </Button>
 
         {/* 页面标题 */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">模型配置</h1>
-            <p className="text-muted-foreground">配置 AI 大模型供应商</p>
-          </div>
-          {isAdmin && (
+        <PageHeader
+          className="mb-6"
+          title="模型配置"
+          description="配置 AI 大模型供应商"
+          icon={<Bot className="h-5 w-5" />}
+          action={isAdmin ? (
             <Button onClick={() => handleOpenDialog()}>
               添加配置
             </Button>
-          )}
-        </div>
+          ) : undefined}
+        />
 
         {/* 配置列表 */}
         <div className="space-y-4">
@@ -251,7 +253,7 @@ const handleOpenDialog = (config?: any) => {
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-lg font-semibold">{config.name}</h3>
                       {config.is_default === 1 && (
-                        <Badge className="bg-blue-500">默认</Badge>
+                        <Badge className="bg-brand-500">默认</Badge>
                       )}
                       {config.status === 'inactive' && (
                         <Badge variant="secondary">已禁用</Badge>

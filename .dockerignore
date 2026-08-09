@@ -1,0 +1,8 @@
+node_modules
+.next
+dist
+.git
+.workbuddy
+npm-debug.log
+*.log
+.DS_Store

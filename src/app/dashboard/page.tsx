@@ -290,7 +290,7 @@ export default function DashboardPage() {
           <p className="text-gray-400 mb-4">登录后即可查看任务数据</p>
           <button
             onClick={() => window.location.href = '/login'}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
           >
             前往登录
           </button>
@@ -321,23 +321,30 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* 顶部标题区域 */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">任务概览</h1>
-            <p className="text-gray-400 mt-1">{currentTime}</p>
+        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-6 py-5 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-brand-600 flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 15h7v6H3z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">任务概览</h1>
+              <p className="text-gray-400 text-sm mt-0.5">{currentTime}</p>
+            </div>
           </div>
           <div className="text-right">
-            <div className="text-4xl font-bold text-gray-900">{stats?.totalProjects || 0}</div>
+            <div className="text-4xl font-bold text-brand-600">{stats?.totalProjects || 0}</div>
             <div className="text-gray-400 text-sm">任务总数</div>
           </div>
         </div>
 
         {/* 核心指标卡片 */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all" onClick={() => handleFilterClick('all', '总任务数')}>
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm cursor-pointer hover:border-brand-300 hover:shadow-md transition-all" onClick={() => handleFilterClick('all', '总任务数')}>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
@@ -379,8 +386,8 @@ export default function DashboardPage() {
 
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
@@ -399,10 +406,10 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-gray-500 text-sm">最近7天新增</div>
-                  <div className="text-2xl font-bold text-blue-600">{stats?.overview?.recentProjects || 0}</div>
+                  <div className="text-2xl font-bold text-brand-600">{stats?.overview?.recentProjects || 0}</div>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-12 h-12 rounded-lg bg-brand-50 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                 </div>

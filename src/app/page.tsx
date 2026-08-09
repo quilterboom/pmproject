@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -57,16 +57,78 @@ export default function LoginPage() {
     }
   };
 
+  const features = [
+    '任务看板一目了然，进度实时可见',
+    '多维度筛选、催办与团队成员协同',
+    'AI 智能解析自然语言生成任务'
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center">任务管理系统</CardTitle>
-          <CardDescription className="text-center">
-            请登录您的账户
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen flex bg-white">
+      {/* 左侧品牌区 */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500 p-12 text-white relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/10" />
+        <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-white/10" />
+        <div className="absolute top-1/3 right-10 w-40 h-40 rounded-3xl bg-white/5 rotate-12" />
+
+        <div className="relative flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </div>
+          <span className="text-xl font-bold tracking-wide">任务管理系统</span>
+        </div>
+
+        <div className="relative space-y-6">
+          <h1 className="text-4xl font-bold leading-tight">
+            让团队协作
+            <br />
+            更高效、更透明
+          </h1>
+          <p className="text-white/80 text-lg max-w-md leading-relaxed">
+            统一跟踪任务进度、里程碑与风险，实时掌握项目全局状态。
+          </p>
+          <ul className="space-y-4 pt-2">
+            {features.map((f) => (
+              <li key={f} className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+                <span className="text-white/90">{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="relative text-sm text-white/60">
+          © 2026 任务管理系统 · 仪控部
+        </div>
+      </div>
+
+      {/* 右侧登录表单 */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden mb-8 flex items-center gap-2 justify-center">
+            <div className="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              </svg>
+            </div>
+            <span className="text-lg font-bold text-gray-800">任务管理系统</span>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900">登录</h2>
+          <p className="text-gray-400 mt-1 mb-6">请输入您的账户信息以继续</p>
+
           <form onSubmit={handleSubmit} method="POST" className="space-y-4">
             {error && (
               <Alert variant="destructive">
@@ -102,7 +164,11 @@ export default function LoginPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full bg-brand-600 hover:bg-brand-700 text-white"
+              disabled={loading}
+            >
               {loading ? '登录中...' : '登录'}
             </Button>
 
@@ -111,14 +177,14 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => router.push('/register')}
-                className="text-primary hover:underline"
+                className="text-brand-600 hover:underline font-medium"
               >
                 立即注册
               </button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

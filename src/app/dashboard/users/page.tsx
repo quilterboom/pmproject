@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Pencil, Trash2, Key } from 'lucide-react';
+import { Pencil, Trash2, Key, Users, Search } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -379,7 +380,7 @@ export default function UsersPage() {
   const roleColors: Record<string, string> = {
     admin: 'bg-red-500',
     manager: 'bg-orange-500',
-    member: 'bg-blue-500',
+    member: 'bg-brand-500',
   };
 
   const roleLabels: Record<string, string> = {
@@ -408,19 +409,19 @@ export default function UsersPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-3xl font-bold">人员管理</h1>
+      <PageHeader title="人员管理" description="管理系统成员、角色与权限" icon={<Users className="h-5 w-5" />} />
       
       {/* 搜索框和添加按钮 */}
-      <div className="flex items-center justify-between">
-        <div className="relative w-64">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="搜索姓名或用户名..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 pr-3 py-1.5 border rounded-md text-sm w-full bg-gray-50"
+            className="w-full rounded-md border bg-white py-1.5 pl-8 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30"
           />
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
         </div>
         
         {currentUser?.role === 'admin' && (

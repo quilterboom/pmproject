@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: '任务管理系统',
     description:
       '任务管理系统是一个简洁高效的项目管理工具，帮助团队跟踪任务、管理项目进度。',
-    url: 'http://129.226.220.194:5000',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000',
     siteName: '任务管理系统',
     locale: 'zh_CN',
     type: 'website',

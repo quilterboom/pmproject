@@ -1,9 +1,13 @@
 // ============================================================
 // API 配置
 // ============================================================
-export const API_BASE = typeof window !== 'undefined' 
-  ? (localStorage.getItem('api_base') || 'http://129.226.220.194:5000/api')
-  : 'http://129.226.220.194:5000/api';
+// 前端调用后端接口的基础地址，通过环境变量 NEXT_PUBLIC_API_BASE 配置（构建时注入）。
+// 优先级：构建环境变量 > 浏览器 localStorage('api_base') 手动覆盖 > 默认相对路径 /api
+// 默认 /api 表示前后端同源，容器自洽、无需依赖远程地址。
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE ||
+  (typeof window !== 'undefined' ? (localStorage.getItem('api_base') || '') : '') ||
+  '/api';
 
 // ============================================================
 // 项目状态配置
@@ -60,7 +64,7 @@ export type ProjectPriority = 1 | 2 | 3;
 // ============================================================
 // 饼图颜色配置
 // ============================================================
-export const STATUS_PIE_COLORS = ['#3b82f6', '#eab308', '#22c55e', '#f97316', '#ef4444'];
+export const STATUS_PIE_COLORS = ['#0052d9', '#0ea5e9', '#16a34a', '#f59e0b', '#ef4444'];
 export const PRIORITY_PIE_COLORS = ['#ef4444', '#eab308', '#22c55e'];
 
 // ============================================================
